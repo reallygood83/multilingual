@@ -1,0 +1,26 @@
+{
+  "name": "school-notice-translator",
+  "version": "1.0.0",
+  "description": "다국어 가정통신문 번역 및 생성 시스템",
+  "private": true,
+  "scripts": {
+    "dev": "concurrently \"npm run dev:backend\" \"npm run dev:frontend\"",
+    "dev:backend": "cd backend && npm run dev",
+    "dev:frontend": "cd school-notice-app && npm run dev",
+    "build": "cd school-notice-app && npm run build",
+    "install:all": "npm install && cd backend && npm install && cd ../school-notice-app && npm install"
+  },
+  "keywords": [
+    "school",
+    "notice",
+    "translation",
+    "multilingual",
+    "korean",
+    "education"
+  ],
+  "author": "School Notice Team",
+  "license": "MIT",
+  "devDependencies": {
+    "concurrently": "^8.2.2"
+  }
+}

@@ -1,21 +1,6 @@
 {
-  "version": 2,
-  "builds": [
-    {
-      "src": "school-notice-app/package.json",
-      "use": "@vercel/static-build",
-      "config": {
-        "distDir": "dist"
-      }
-    },
-    {
-      "src": "api/index.js",
-      "use": "@vercel/node",
-      "config": {
-        "maxDuration": 30
-      }
-    }
-  ],
+  "buildCommand": "cd school-notice-app && npm run build",
+  "outputDirectory": "school-notice-app/dist",
   "routes": [
     {
       "src": "/api/(.*)",
@@ -26,10 +11,12 @@
     },
     {
       "src": "/(.*)",
-      "dest": "/school-notice-app/dist/$1"
+      "dest": "/index.html"
     }
   ],
-  "env": {
-    "NODE_ENV": "production"
+  "functions": {
+    "api/index.js": {
+      "maxDuration": 30
+    }
   }
 }

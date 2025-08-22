@@ -106,26 +106,11 @@ export default defineConfig({
     }
   },
   
-  // CSS options
+  // CSS options (simplified for Vercel compatibility)
   css: {
     // CSS modules
     modules: {
       localsConvention: 'camelCase'
-    },
-    
-    // PostCSS options
-    postcss: {
-      plugins: [
-        // Add autoprefixer for better browser support
-        require('autoprefixer')
-      ]
-    },
-    
-    // CSS preprocessor options
-    preprocessorOptions: {
-      scss: {
-        additionalData: `@import "@/styles/variables.scss";`
-      }
     }
   },
   

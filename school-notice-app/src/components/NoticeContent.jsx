@@ -1,7 +1,9 @@
-import React from 'react';
+import React, { memo, useCallback, useMemo } from 'react';
+import PropTypes from 'prop-types';
 import styled from 'styled-components';
 import ReactQuill from 'react-quill';
 import 'react-quill/dist/quill.snow.css';
+import { NoticeContentPropsType, sanitizeTextInput, validateHTMLContent } from '../types/noticeTypes';
 
 const ContentContainer = styled.div`
   margin: 20px 0;
@@ -76,12 +78,17 @@ const ReadOnlyContent = styled.div`
   }
 `;
 
-const NoticeContent = ({ 
+const NoticeContent = memo(({ 
   data, 
   onChange, 
   editing = false 
 }) => {
-  const modules = {
+  // Input validation and sanitization
+  const validateAndSanitizeInput = (value) => {
+    if (typeof value !== 'string') return '';
+    return sanitizeTextInput(value);
+  };
+  const modules = useMemo(() => ({
     toolbar: [
       [{ 'header': [1, 2, 3, false] }],
       ['bold', 'italic', 'underline', 'strike'],
@@ -91,22 +98,30 @@ const NoticeContent = ({
       ['link', 'image'],
       ['clean']
     ],
-  };
+  }), []);
 
-  const formats = [
+  const formats = useMemo(() => [
     'header', 'font', 'size',
     'bold', 'italic', 'underline', 'strike', 'blockquote',
     'list', 'bullet', 'indent',
     'link', 'image', 'align'
-  ];
+  ], []);
 
-  const handleContentChange = (content) => {
-    onChange({ ...data, content });
-  };
+  const handleContentChange = useCallback((content) => {
+    // Validate HTML content for security
+    if (content && !validateHTMLContent(content)) {
+      console.warn('HTML content contains potentially dangerous elements');
+      return;
+    }
+    
+    onChange({ ...data, content: content || '' });
+  }, [data, onChange]);
 
-  const handleIntroChange = (intro) => {
-    onChange({ ...data, intro });
-  };
+  const handleIntroChange = useCallback((introText) => {
+    // Sanitize intro text input
+    const sanitizedIntro = validateAndSanitizeInput(introText);
+    onChange({ ...data, introText: sanitizedIntro });
+  }, [data, onChange]);
 
   return (
     <ContentContainer>
@@ -115,7 +130,7 @@ const NoticeContent = ({
           <input
             type="text"
             value={data.introText || '2025학년도 평촌초등학교 영어회화전문강사 선발계획 공고입니다.'}
-            onChange={(e) => handleIntroChange(e.target.value)}
+            onChange={(e) => handleIntroChange(e.target && e.target.value)}
             style={{
               width: '100%',
               border: '1px solid #ccc',
@@ -150,6 +165,17 @@ const NoticeContent = ({
       )}
     </ContentContainer>
   );
+});
+
+// PropTypes validation
+NoticeContent.propTypes = NoticeContentPropsType;
+
+// Default props
+NoticeContent.defaultProps = {
+  editing: false
 };
+
+// Display name for debugging
+NoticeContent.displayName = 'NoticeContent';
 
 export default NoticeContent;

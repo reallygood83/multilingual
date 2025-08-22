@@ -1,5 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, memo, useCallback } from 'react';
+import PropTypes from 'prop-types';
 import styled from 'styled-components';
+import { NoticeHeaderPropsType, sanitizeTextInput, validateHTMLContent } from '../types/noticeTypes';
 
 const HeaderContainer = styled.div`
   border: 2px solid #000;
@@ -85,33 +87,73 @@ const EditableTextArea = styled.textarea`
   min-height: ${props => props.editing ? '60px' : 'auto'};
 `;
 
-const NoticeHeader = ({ 
+const NoticeHeader = memo(({ 
   data, 
   onChange, 
   editing = false,
   onLogoUpload 
 }) => {
+  // Input validation and sanitization
+  const validateAndSanitizeInput = (value) => {
+    if (typeof value !== 'string') return '';
+    return sanitizeTextInput(value);
+  };
   const [logoPreview, setLogoPreview] = useState(data.logoUrl || '');
 
-  const handleFieldChange = (field, value) => {
-    onChange({ ...data, [field]: value });
-  };
+  const handleFieldChange = useCallback((field, value) => {
+    // Validate and sanitize input before updating
+    const sanitizedValue = validateAndSanitizeInput(value);
+    
+    // Additional validation for specific fields
+    if (field === 'phone' && sanitizedValue && !/^[\d().\s-]+$/.test(sanitizedValue)) {
+      console.warn('Invalid phone number format');
+      return;
+    }
+    
+    if (field === 'logoUrl' && sanitizedValue && !validateHTMLContent(sanitizedValue)) {
+      console.warn('Invalid logo URL format');
+      return;
+    }
+    
+    onChange({ ...data, [field]: sanitizedValue });
+  }, [data, onChange]);
 
-  const handleLogoChange = (event) => {
-    const file = event.target.files[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        const logoUrl = e.target.result;
+  const handleLogoChange = useCallback((event) => {
+    const file = event.target.files && event.target.files[0];
+    
+    if (!file) return;
+    
+    // Validate file type
+    if (!file.type.startsWith('image/')) {
+      console.error('Selected file is not an image');
+      return;
+    }
+    
+    // Validate file size (max 5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      console.error('File size too large (max 5MB)');
+      return;
+    }
+    
+    const reader = new FileReader();
+    
+    reader.onerror = () => {
+      console.error('Error reading file');
+    };
+    
+    reader.onload = (e) => {
+      const logoUrl = e.target && e.target.result;
+      if (logoUrl && typeof logoUrl === 'string') {
         setLogoPreview(logoUrl);
         handleFieldChange('logoUrl', logoUrl);
-        if (onLogoUpload) {
+        if (onLogoUpload && typeof onLogoUpload === 'function') {
           onLogoUpload(file, logoUrl);
         }
-      };
-      reader.readAsDataURL(file);
-    }
-  };
+      }
+    };
+    
+    reader.readAsDataURL(file);
+  }, [handleFieldChange, onLogoUpload]);
 
   return (
     <HeaderContainer>
@@ -224,6 +266,18 @@ const NoticeHeader = ({
       </InfoBar>
     </HeaderContainer>
   );
+});
+
+// PropTypes validation
+NoticeHeader.propTypes = NoticeHeaderPropsType;
+
+// Default props
+NoticeHeader.defaultProps = {
+  editing: false,
+  onLogoUpload: null
 };
+
+// Display name for debugging
+NoticeHeader.displayName = 'NoticeHeader';
 
 export default NoticeHeader;

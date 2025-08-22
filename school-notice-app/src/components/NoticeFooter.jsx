@@ -1,5 +1,7 @@
-import React from 'react';
+import React, { memo, useCallback, useMemo } from 'react';
+import PropTypes from 'prop-types';
 import styled from 'styled-components';
+import { NoticeFooterPropsType, sanitizeTextInput } from '../types/noticeTypes';
 
 const FooterContainer = styled.div`
   margin-top: 30px;
@@ -81,36 +83,80 @@ const EditableTextArea = styled.textarea`
   min-height: ${props => props.editing ? '60px' : 'auto'};
 `;
 
-const NoticeFooter = ({ 
+const NoticeFooter = memo(({ 
   data, 
   onChange, 
   editing = false 
 }) => {
-  const handleFieldChange = (field, value) => {
-    onChange({ ...data, [field]: value });
+  // Input validation and sanitization
+  const validateAndSanitizeInput = (value) => {
+    if (typeof value !== 'string') return '';
+    return sanitizeTextInput(value);
   };
+  const handleFieldChange = useCallback((field, value) => {
+    // Validate and sanitize input before updating
+    const sanitizedValue = validateAndSanitizeInput(value);
+    onChange({ ...data, [field]: sanitizedValue });
+  }, [data, onChange]);
 
-  const handleAttachmentChange = (index, value) => {
-    const newAttachments = [...(data.attachments || [])];
-    newAttachments[index] = value;
+  const handleAttachmentChange = useCallback((index, value) => {
+    // Validate index and value
+    if (typeof index !== 'number' || index < 0) {
+      console.warn('Invalid attachment index');
+      return;
+    }
+    
+    const sanitizedValue = validateAndSanitizeInput(value);
+    const currentAttachments = Array.isArray(data.attachments) ? data.attachments : [];
+    const newAttachments = [...currentAttachments];
+    
+    // Ensure the array is large enough
+    while (newAttachments.length <= index) {
+      newAttachments.push('');
+    }
+    
+    newAttachments[index] = sanitizedValue;
     handleFieldChange('attachments', newAttachments);
-  };
+  }, [data.attachments, handleFieldChange]);
 
-  const addAttachment = () => {
-    const newAttachments = [...(data.attachments || []), ''];
+  const addAttachment = useCallback(() => {
+    const currentAttachments = Array.isArray(data.attachments) ? data.attachments : [];
+    
+    // Limit maximum number of attachments
+    if (currentAttachments.length >= 10) {
+      console.warn('Maximum number of attachments reached');
+      return;
+    }
+    
+    const newAttachments = [...currentAttachments, ''];
     handleFieldChange('attachments', newAttachments);
-  };
+  }, [data.attachments, handleFieldChange]);
 
-  const removeAttachment = (index) => {
-    const newAttachments = (data.attachments || []).filter((_, i) => i !== index);
+  const removeAttachment = useCallback((index) => {
+    // Validate index
+    if (typeof index !== 'number' || index < 0) {
+      console.warn('Invalid attachment index for removal');
+      return;
+    }
+    
+    const currentAttachments = Array.isArray(data.attachments) ? data.attachments : [];
+    
+    if (index >= currentAttachments.length) {
+      console.warn('Attachment index out of bounds');
+      return;
+    }
+    
+    const newAttachments = currentAttachments.filter((_, i) => i !== index);
     handleFieldChange('attachments', newAttachments);
-  };
+  }, [data.attachments, handleFieldChange]);
 
-  const currentDate = new Date().toLocaleDateString('ko-KR', {
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit'
-  }).replace(/\. /g, '년 ').replace(/\.$/, '일');
+  const currentDate = useMemo(() => 
+    new Date().toLocaleDateString('ko-KR', {
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit'
+    }).replace(/\. /g, '년 ').replace(/\.$/, '일')
+  , []);
 
   return (
     <FooterContainer>
@@ -215,6 +261,17 @@ const NoticeFooter = ({
       </SignatureSection>
     </FooterContainer>
   );
+});
+
+// PropTypes validation
+NoticeFooter.propTypes = NoticeFooterPropsType;
+
+// Default props
+NoticeFooter.defaultProps = {
+  editing: false
 };
+
+// Display name for debugging
+NoticeFooter.displayName = 'NoticeFooter';
 
 export default NoticeFooter;

@@ -17,6 +17,14 @@ export default defineConfig({
   // Development server options
   server: {
     host: true,
+    // Proxy API to backend to avoid CORS and allow preview access
+    proxy: {
+      '/api': {
+        target: 'http://localhost:3001',
+        changeOrigin: true,
+        secure: false,
+      }
+    },
     // Do not pin the port; let Vite choose an available one so HMR uses the correct port
     hmr: {
       overlay: true

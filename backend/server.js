@@ -6,9 +6,22 @@ require('dotenv').config();
 const app = express();
 const PORT = process.env.PORT || 3001;
 
+// CORS configuration variables (must be defined before middleware)
+const isProduction = process.env.NODE_ENV === 'production';
+const allowedOriginsEnv = process.env.CORS_ORIGINS || process.env.CORS_ORIGIN || 'http://localhost:5173,http://localhost:5174,http://localhost:5175,http://localhost:5176,http://localhost:5177,http://localhost:5178,http://localhost:5179,http://localhost:5180,http://localhost:5181';
+const allowedOrigins = allowedOriginsEnv.split(',').map(o => o.trim());
+
 // Middleware
 app.use(cors({
-  origin: process.env.CORS_ORIGIN || 'http://localhost:5173',
+  origin: function (origin, callback) {
+    // Allow non-browser or same-origin requests
+    if (!origin) return callback(null, true);
+    // In production, restrict to allowed origins; in dev, allow any origin to simplify local testing
+    if (!isProduction || allowedOrigins.includes(origin)) {
+      return callback(null, true);
+    }
+    return callback(new Error('Not allowed by CORS'));
+  },
   credentials: true
 }));
 app.use(bodyParser.json());
@@ -200,12 +213,12 @@ async function translateText(text, targetLanguage) {
         '자세한': 'Подробная',
         '사항': 'Информация',
         '붙임파일': 'Прикрепленный файл',
-        '바랍니다': 'Пожалуйста, обратитесь к',
-        '채용공고': 'Объявление о найме',
-        '부': 'Копия'
+        '바랍니다': 'Просим ознакомиться',
+        '채용공고': 'Объявление о приеме на работу',
+        '부': 'Экз.'
       }
     };
-    
+
     let translatedText = text;
     const targetTranslations = translations[targetLanguage];
     

@@ -388,6 +388,25 @@ const NoticeWizardModal = ({ isOpen, onClose, onGenerate, apiKey }) => {
       return;
     }
 
+    // Validate API key before attempting generation
+    if (!apiKey || apiKey.trim() === '') {
+      toast.showError(
+        'Gemini API 키가 설정되지 않았습니다. 설정에서 API 키를 입력해주세요.',
+        { duration: 5000 }
+      );
+      return;
+    }
+
+    // Import validateApiKey here to avoid circular dependencies
+    const { validateApiKey } = await import('../services/geminiService');
+    if (!validateApiKey(apiKey)) {
+      toast.showError(
+        '유효하지 않은 Gemini API 키입니다. 설정에서 올바른 API 키를 입력해주세요.',
+        { duration: 5000 }
+      );
+      return;
+    }
+
     setIsGenerating(true);
     toast.showProgress('AI가 전문적인 통신문을 작성하고 있습니다...', { id: 'generating' });
     
@@ -411,7 +430,19 @@ const NoticeWizardModal = ({ isOpen, onClose, onGenerate, apiKey }) => {
     } catch (error) {
       console.error('Professional notice generation failed:', error);
       toast.removeToast('generating');
-      toast.showError(`통신문 생성 중 오류가 발생했습니다: ${error.message}`);
+      
+      let errorMessage = '통신문 생성 중 오류가 발생했습니다.';
+      if (error.message?.includes('Invalid API key') || error.message?.includes('API key')) {
+        errorMessage = 'API 키가 유효하지 않습니다. 설정에서 올바른 Gemini API 키를 확인해주세요.';
+      } else if (error.message?.includes('quota') || error.message?.includes('429')) {
+        errorMessage = 'API 사용 한도를 초과했습니다. 잠시 후 다시 시도해주세요.';
+      } else if (error.message?.includes('network') || error.message?.includes('connection')) {
+        errorMessage = '네트워크 연결 오류가 발생했습니다. 인터넷 연결을 확인해주세요.';
+      } else {
+        errorMessage = `통신문 생성 실패: ${error.message}`;
+      }
+      
+      toast.showError(errorMessage, { duration: 5000 });
     } finally {
       setIsGenerating(false);
     }
@@ -439,6 +470,21 @@ const NoticeWizardModal = ({ isOpen, onClose, onGenerate, apiKey }) => {
             ×
           </CloseButton>
         </ModalHeader>
+
+        {(!apiKey || apiKey.trim() === '') && (
+          <div style={{
+            backgroundColor: '#fff3cd',
+            border: '1px solid #ffeaa7',
+            borderRadius: '8px',
+            padding: '12px 16px',
+            marginBottom: '16px',
+            fontSize: '14px',
+            color: '#856404'
+          }}>
+            ⚠️ <strong>Gemini API 키가 설정되지 않았습니다.</strong><br/>
+            설정 패널에서 Gemini API 키를 입력해야 AI 통신문 생성 기능을 사용할 수 있습니다.
+          </div>
+        )}
 
         <WizardStep>
           <StepTitle>1. 통신문 카테고리 선택</StepTitle>
@@ -555,7 +601,8 @@ const NoticeWizardModal = ({ isOpen, onClose, onGenerate, apiKey }) => {
 NoticeWizardModal.propTypes = {
   isOpen: PropTypes.bool.isRequired,
   onClose: PropTypes.func.isRequired,
-  onGenerate: PropTypes.func.isRequired
+  onGenerate: PropTypes.func.isRequired,
+  apiKey: PropTypes.string
 };
 
 export default NoticeWizardModal;

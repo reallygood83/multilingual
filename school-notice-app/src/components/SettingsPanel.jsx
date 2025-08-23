@@ -2,7 +2,7 @@ import React, { useState, useCallback, memo } from 'react';
 import styled from 'styled-components';
 import OptimizedButton from './OptimizedButton';
 import StatusMessage from './StatusMessage';
-import { validateApiKey, testGeminiConnection } from '../services/geminiService';
+import { validateApiKey, validateApiKeyDetailed, testGeminiConnection } from '../services/geminiService';
 
 const SettingsContainer = styled.div`
   background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
@@ -210,16 +210,27 @@ const SettingsPanel = memo(({
       ...settings,
       [field]: value
     });
+    
+    // API 키 입력 시 실시간 유효성 검사
+    if (field === 'geminiApiKey' && value) {
+      const validation = validateApiKeyDetailed(value);
+      if (!validation.valid) {
+        setStatusMessage({ text: validation.hint, type: 'warning' });
+      } else {
+        setStatusMessage({ text: validation.message, type: 'success' });
+      }
+    }
   }, [settings, onSettingsChange]);
 
   const handleApiTest = useCallback(async () => {
     if (!settings.geminiApiKey) {
-      showMessage('API 키를 입력해주세요.', 'error');
+      showMessage('먼저 Gemini API 키를 입력해주세요.', 'error');
       return;
     }
 
-    if (!validateApiKey(settings.geminiApiKey)) {
-      showMessage('올바른 Gemini API 키 형식이 아닙니다.', 'error');
+    const validation = validateApiKeyDetailed(settings.geminiApiKey);
+    if (!validation.valid) {
+      showMessage(validation.message, 'error');
       return;
     }
 
@@ -272,7 +283,7 @@ const SettingsPanel = memo(({
   if (!isOpen) return null;
 
   return (
-    <SettingsContainer>
+    <SettingsContainer data-testid="settings-panel">
       <SettingsTitle>
         시스템 설정
         <OptimizedButton
@@ -305,14 +316,59 @@ const SettingsPanel = memo(({
           </SectionTitle>
           
           <InputGroup>
-            <Label>Gemini API 키</Label>
-            <Input
-              type="password"
-              value={settings.geminiApiKey || ''}
-              onChange={(e) => handleInputChange('geminiApiKey', e.target.value)}
-              placeholder="AIzaSy... (Google AI Studio에서 발급)"
-            />
-          </InputGroup>
+              <Label>Gemini API 키</Label>
+              <div style={{ position: 'relative' }}>
+                <Input
+                  type="password"
+                  value={settings.geminiApiKey || ''}
+                  onChange={(e) => handleInputChange('geminiApiKey', e.target.value)}
+                  placeholder="AIzaSy... (Google AI Studio에서 발급)"
+                  aria-label="Gemini API 키"
+                  data-testid="gemini-api-key-input"
+                  style={{
+                    paddingRight: '40px',
+                    borderColor: settings.geminiApiKey 
+                      ? validateApiKey(settings.geminiApiKey) ? '#27ae60' : '#e74c3c'
+                      : '#e1e8ed'
+                  }}
+                />
+                {settings.geminiApiKey && (
+                  <span style={{
+                    position: 'absolute',
+                    right: '12px',
+                    top: '50%',
+                    transform: 'translateY(-50%)',
+                    fontSize: '16px',
+                    color: validateApiKey(settings.geminiApiKey) ? '#27ae60' : '#e74c3c'
+                  }}>
+                    {validateApiKey(settings.geminiApiKey) ? '✓' : '✗'}
+                  </span>
+                )}
+              </div>
+              {settings.geminiApiKey && !validateApiKey(settings.geminiApiKey) && (
+                <div style={{
+                  marginTop: '4px',
+                  fontSize: '12px',
+                  color: '#e74c3c'
+                }}>
+                  {validateApiKeyDetailed(settings.geminiApiKey).hint}
+                </div>
+              )}
+              <div style={{
+                marginTop: '4px',
+                fontSize: '12px',
+                color: '#666'
+              }}>
+                <a 
+                  href="https://makersuite.google.com/app/apikey" 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  style={{ color: '#1a73e8', textDecoration: 'none' }}
+                >
+                  Google AI Studio에서 API 키 발급받기 →
+                </a>
+              </div>
+            </InputGroup>
 
           <ButtonGroup>
             <OptimizedButton

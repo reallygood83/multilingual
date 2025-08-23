@@ -509,11 +509,16 @@ export async function generateProfessionalNotice(requestData, apiKeyOverride = u
       throw new Error('카테고리 정보가 필요합니다.');
     }
 
+    // API 키 검증
+    const apiKey = apiKeyOverride || import.meta.env.VITE_GEMINI_API_KEY;
+    if (!apiKey || apiKey.trim() === '') {
+      throw new Error('Gemini API 키가 설정되지 않았습니다. 설정에서 API 키를 입력해주세요.');
+    }
+
     // 전문 프롬프트 생성
     const prompt = generateProfessionalPrompt(category, restData, schoolLevel);
 
     // AI를 통한 전문 통신문 생성
-    const apiKey = apiKeyOverride || import.meta.env.VITE_GEMINI_API_KEY;
     const generatedContent = await translateWithGemini(prompt, 'ko', apiKey);
     
     if (!generatedContent || generatedContent.trim().length === 0) {
@@ -536,9 +541,27 @@ export async function generateProfessionalNotice(requestData, apiKeyOverride = u
     };
   } catch (error) {
     console.error('전문 통신문 생성 중 오류:', error);
+    
+    // 더 친화적인 에러 메시지 제공
+    let userMessage = '전문 통신문 생성 중 오류가 발생했습니다.';
+    
+    if (error.message?.includes('API key') || error.message?.includes('Invalid API key')) {
+      userMessage = 'Gemini API 키가 유효하지 않거나 설정되지 않았습니다. 설정에서 올바른 API 키를 확인해주세요.';
+    } else if (error.message?.includes('quota') || error.message?.includes('429')) {
+      userMessage = 'API 사용 한도를 초과했습니다. 잠시 후 다시 시도해주거나 다른 시간에 이용해주세요.';
+    } else if (error.message?.includes('network') || error.message?.includes('connection') || error.message?.includes('fetch')) {
+      userMessage = '네트워크 연결 오류가 발생했습니다. 인터넷 연결을 확인하고 다시 시도해주세요.';
+    } else if (error.message?.includes('rate limit')) {
+      userMessage = '요청이 너무 많습니다. 잠시 후 다시 시도해주세요.';
+    } else if (error.message?.includes('timeout')) {
+      userMessage = '응답 시간이 초과되었습니다. 잠시 후 다시 시도해주세요.';
+    } else {
+      userMessage = error.message || '전문 통신문 생성 중 오류가 발생했습니다. 다시 시도해주세요.';
+    }
+    
     return {
       success: false,
-      error: error.message || '전문 통신문 생성 중 오류가 발생했습니다.'
+      error: userMessage
     };
   }
 }

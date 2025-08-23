@@ -10,8 +10,8 @@ import {
 import { validateNoticeData, validateLanguageCode } from '../types/noticeTypes';
 
 // Enhanced API configuration with environment-based URL
-const API_BASE_URL = import.meta.env.VITE_API_URL || 
-  (import.meta.env.PROD ? '/api' : 'http://localhost:3005/api');
+export const isApiConfigured = Boolean(import.meta.env.VITE_API_URL);
+const API_BASE_URL = import.meta.env.VITE_API_URL || '/api';
 
 // Create axios instance with default configuration
 const apiClient = axios.create({
@@ -372,5 +372,6 @@ export default {
   translateNoticeData,
   extractTextFromHTML,
   replaceTextInHTML,
-  checkAPIHealth
+  checkAPIHealth,
+  isApiConfigured
 };

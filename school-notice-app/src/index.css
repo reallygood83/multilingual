@@ -1,136 +1,23 @@
-:root {
-  /* Global Color Palette - Luxurious, Trustworthy, Warm */
-  --primary-50: #e7eef6;
-  --primary-100: #cfdceb;
-  --primary-200: #a6c1d8;
-  --primary-300: #7aa3c3;
-  --primary-400: #4f7aa4;
-  --primary-500: #1f3a5f; /* Deep Navy */
-  --primary-600: #162d4a;
-  --primary-700: #102339;
-  --primary-800: #0b1a2a;
-  --primary-900: #081320;
-  
-  --secondary-50: #fbf7eb;
-  --secondary-100: #f6eccc;
-  --secondary-200: #f0de9e;
-  --secondary-300: #e8cf6f;
-  --secondary-400: #e2c553;
-  --secondary-500: #d4af37; /* Warm Gold */
-  --secondary-600: #be9c2f;
-  --secondary-700: #9f8126;
-  --secondary-800: #80681e;
-  --secondary-900: #6a5619;
-  
-  --success-50: #ecfdf5;
-  --success-100: #d1fae5;
-  --success-200: #a7f3d0;
-  --success-300: #6ee7b7;
-  --success-400: #34d399;
-  --success-500: #10b981;
-  --success-600: #059669;
-  --success-700: #047857;
-  --success-800: #065f46;
-  --success-900: #064e3b;
-  
-  --warning-50: #fffbeb;
-  --warning-100: #fef3c7;
-  --warning-200: #fde68a;
-  --warning-300: #fcd34d;
-  --warning-400: #fbbf24;
-  --warning-500: #f59e0b;
-  --warning-600: #d97706;
-  --warning-700: #b45309;
-  --warning-800: #92400e;
-  --warning-900: #78350f;
-  
-  --error-50: #fef2f2;
-  --error-100: #fee2e2;
-  --error-200: #fecaca;
-  --error-300: #fca5a5;
-  --error-400: #f87171;
-  --error-500: #ef4444;
-  --error-600: #dc2626;
-  --error-700: #b91c1c;
-  --error-800: #991b1b;
-  --error-900: #7f1d1d;
-  
-  --neutral-50: #fbfbfa;
-  --neutral-100: #f5f3f0; /* Warm Ivory Background */
-  --neutral-200: #ece7df;
-  --neutral-300: #e0d9cf;
-  --neutral-400: #c9c0b6;
-  --neutral-500: #a79d93;
-  --neutral-600: #7a726a;
-  --neutral-700: #57514c;
-  --neutral-800: #3b3733;
-  --neutral-900: #23201e;
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+@import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css');
 
-  /* Surface and Text */
-  --surface-primary: #ffffff;
-  --surface-secondary: var(--neutral-100); /* warm background */
-  --surface-elevated: #ffffff;
-  --text-primary: #1e232b;
-  --text-secondary: #4b5563;
-  --text-muted: #6b7280;
-  --text-on-primary: #ffffff;
-  --text-disabled: #9ca3af;
+@import url('./styles/design-tokens.css');
 
-  /* Elevation and Radius */
-  --elevation-0: none;
-  --elevation-1: 0 2px 8px rgba(0, 0, 0, 0.08);
-  --elevation-2: 0 6px 16px rgba(0, 0, 0, 0.10);
-  --elevation-3: 0 12px 24px rgba(0, 0, 0, 0.12);
-
-  --radius-xs: 6px;
-  --radius-sm: 8px;
-  --radius-md: 12px;
-  --radius-lg: 16px;
-  --radius-xl: 20px;
-
-  /* Spacing */
-  --space-xs: 4px;
-  --space-sm: 8px;
-  --space-md: 12px;
-  --space-lg: 16px;
-  --space-xl: 24px;
-  --space-2xl: 32px;
-  --space-3xl: 40px;
-
-  /* Typography */
-  --font-size-sm: 0.875rem;
-  --font-size-md: 1rem;
-  --font-size-lg: 1.125rem;
-  --font-size-xl: 1.25rem;
-  --line-height-tight: 1.2;
-  --line-height-normal: 1.5;
-  --line-height-relaxed: 1.6;
-  
-  --font-weight-normal: 400;
-  --font-weight-medium: 500;
-  --font-weight-semibold: 600;
-  --font-weight-bold: 700;
-  
-  /* Global Typography */
-  font-family: 'Inter', 'Pretendard', -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
-  line-height: var(--line-height-normal);
-  font-weight: var(--font-weight-normal);
-  font-size: var(--font-size-md);
-  
-  color-scheme: light;
-  color: var(--text-primary);
-  background-color: var(--surface-secondary);
-  
-  font-synthesis: none;
-  text-rendering: optimizeLegibility;
+body {
+  margin: 0;
+  font-family: var(--font-main);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  
-  /* Animation Variables */
-  --transition-fast: 150ms cubic-bezier(0.4, 0, 0.2, 1);
-  --transition-normal: 200ms cubic-bezier(0.4, 0, 0.2, 1);
-  --transition-slow: 300ms cubic-bezier(0.4, 0, 0.2, 1);
+  background-color: var(--surface-secondary);
+  color: var(--text-primary);
 }
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
 
 a {
   font-weight: var(--font-weight-medium);

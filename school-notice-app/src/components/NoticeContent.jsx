@@ -138,14 +138,12 @@ const NoticeContent = memo(({
     'code-block', 'direction', 'line-height'
   ], []);
 
-  const handleContentChange = useCallback((content) => {
-    // Validate HTML content for security
-    if (content && !validateHTMLContent(content)) {
-      console.warn('HTML content contains potentially dangerous elements');
-      return;
+  const handleContentChange = useCallback((content, delta, source, editor) => {
+    // We only want to update state from user changes, not programmatic ones.
+    if (source === 'user') {
+      const sanitizedContent = content === '<p><br></p>' ? '' : content;
+      onChange({ ...data, content: sanitizedContent });
     }
-    
-    onChange({ ...data, content: content || '' });
   }, [data, onChange]);
 
 

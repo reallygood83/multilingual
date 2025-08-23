@@ -115,7 +115,7 @@ const ActionButtons = styled.div`
   flex-wrap: wrap;
 `;
 
-const NoticeFooter = styled.div`
+const CopyFooter = styled.div`
   background: var(--color-background-secondary);
   border-top: 1px solid var(--color-border-default);
   padding: var(--space-6);
@@ -313,7 +313,7 @@ const NoticeWithCopy = ({
       </NoticeContent>
 
       {/* 푸터 */}
-      <NoticeFooter>
+      <CopyFooter>
         <ContactInfo>
           {contactInfo}
           <CopyButton
@@ -324,7 +324,7 @@ const NoticeWithCopy = ({
             style={{ marginLeft: '8px' }}
           />
         </ContactInfo>
-      </NoticeFooter>
+      </CopyFooter>
     </NoticeContainer>
   );
 };

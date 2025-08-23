@@ -1,7 +1,6 @@
 {
-  "source": "school-notice-app",
-  "buildCommand": "npm run build",
-  "outputDirectory": "dist",
+  "buildCommand": "cd school-notice-app && npm ci && npm run build",
+  "outputDirectory": "school-notice-app/dist",
   "rewrites": [
     {
       "source": "/(.*)",

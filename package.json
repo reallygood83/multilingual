@@ -4,12 +4,7 @@
   "description": "다국어 가정통신문 번역 및 생성 시스템",
   "private": true,
   "scripts": {
-    "dev": "concurrently \"npm run dev:backend\" \"npm run dev:frontend\"",
-    "dev:backend": "cd backend && npm run dev",
-    "dev:frontend": "cd school-notice-app && npm run dev",
-    "build": "cd school-notice-app && npm run build",
-    "vercel-build": "cd school-notice-app && npm ci && npm run build",
-    "install:all": "npm install && cd backend && npm install && cd ../school-notice-app && npm install"
+    "build": "cd school-notice-app && npm run build"
   },
   "keywords": [
     "school",

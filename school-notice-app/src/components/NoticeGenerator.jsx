@@ -221,6 +221,25 @@ const ProgressIndicator = styled.div`
   }
 `;
 
+const Footer = styled.footer`
+  margin-top: auto;
+  padding: 20px;
+  font-size: var(--font-size-sm);
+  color: var(--text-muted);
+  text-align: center;
+  border-top: 1px solid var(--neutral-200);
+
+  a {
+    color: var(--primary-500);
+    text-decoration: none;
+    font-weight: 600;
+    
+    &:hover {
+      text-decoration: underline;
+    }
+  }
+`;
+
 const NoticeGenerator = () => {
   const { measureOperation } = usePerformanceMonitor('NoticeGenerator');
   

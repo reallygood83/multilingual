@@ -454,10 +454,20 @@ const PROFESSIONAL_STYLE_GUIDE = {
  * 전문적인 프롬프트 생성 함수
  */
 function generateProfessionalPrompt(category, data, schoolLevel = 'elementary') {
+  console.log('🔍 generateProfessionalPrompt 호출됨:', { category, schoolLevel });
+  console.log('🔍 사용 가능한 카테고리 키:', Object.keys(PROFESSIONAL_CATEGORY_PROMPTS));
+  
   const categoryInfo = PROFESSIONAL_CATEGORY_PROMPTS[category];
   if (!categoryInfo) {
+    console.error('❌ 카테고리를 찾을 수 없음:', { 
+      received: category, 
+      available: Object.keys(PROFESSIONAL_CATEGORY_PROMPTS),
+      type: typeof category 
+    });
     throw new Error(`지원하지 않는 카테고리입니다: ${category}`);
   }
+  
+  console.log('✅ 카테고리 정보 찾음:', categoryInfo.name);
 
   let prompt = categoryInfo.template;
   
@@ -497,6 +507,11 @@ function generateProfessionalPrompt(category, data, schoolLevel = 'elementary') 
  * 전문적인 통신문 생성 메인 함수
  */
 export async function generateProfessionalNotice(requestData, apiKeyOverride = undefined) {
+  console.log('🚀 generateProfessionalNotice 호출됨');
+  console.log('📥 받은 requestData =', JSON.stringify(requestData, null, 2));
+  console.log('🔍 requestData.category =', requestData.category);
+  console.log('📋 사용 가능한 카테고리 키들 =', Object.keys(PROFESSIONAL_CATEGORY_PROMPTS));
+  
   try {
     const { 
       category, 
@@ -504,9 +519,24 @@ export async function generateProfessionalNotice(requestData, apiKeyOverride = u
       ...restData 
     } = requestData;
     
+    console.log('🔍 추출된 카테고리:', category);
+    console.log('🎓 학교급:', schoolLevel);
+    console.log('📝 기타 데이터:', restData);
+    
     // 입력 데이터 검증
     if (!category) {
+      console.error('❌ 카테고리가 누락됨');
       throw new Error('카테고리 정보가 필요합니다.');
+    }
+    
+    // 카테고리 유효성 검사
+    if (!PROFESSIONAL_CATEGORY_PROMPTS[category]) {
+      console.error('❌ 유효하지 않은 카테고리:', {
+        received: category,
+        type: typeof category,
+        available: Object.keys(PROFESSIONAL_CATEGORY_PROMPTS)
+      });
+      throw new Error(`지원하지 않는 카테고리입니다: ${category}. 사용 가능한 카테고리: ${Object.keys(PROFESSIONAL_CATEGORY_PROMPTS).join(', ')}`);
     }
 
     // API 키 검증
@@ -515,20 +545,27 @@ export async function generateProfessionalNotice(requestData, apiKeyOverride = u
       throw new Error('Gemini API 키가 설정되지 않았습니다. 설정에서 API 키를 입력해주세요.');
     }
 
+    console.log('🎯 전문 프롬프트 생성 시작');
     // 전문 프롬프트 생성
     const prompt = generateProfessionalPrompt(category, restData, schoolLevel);
+    console.log('✅ 프롬프트 생성 완료');
 
+    console.log('🤖 AI 통신문 생성 시작');
     // AI를 통한 전문 통신문 생성
     const generatedContent = await translateWithGemini(prompt, 'ko', apiKey);
     
     if (!generatedContent || generatedContent.trim().length === 0) {
+      console.error('❌ AI가 빈 내용을 반환함');
       throw new Error('AI가 통신문을 생성하지 못했습니다.');
     }
+    console.log('✅ AI 통신문 생성 완료, 길이:', generatedContent.length);
 
+    console.log('🎨 HTML 변환 시작');
     // 고품질 HTML 변환
     const htmlContent = convertToProfessionalHTML(generatedContent);
+    console.log('✅ HTML 변환 완료');
 
-    return {
+    const result = {
       success: true,
       data: {
         introText: PROFESSIONAL_CATEGORY_PROMPTS[category].name,
@@ -539,6 +576,15 @@ export async function generateProfessionalNotice(requestData, apiKeyOverride = u
         generatedAt: new Date().toISOString()
       }
     };
+    
+    console.log('🎉 전문 통신문 생성 성공!');
+    console.log('📄 결과 데이터:', {
+      introText: result.data.introText,
+      contentLength: result.data.content.length,
+      category: result.data.category
+    });
+    
+    return result;
   } catch (error) {
     console.error('전문 통신문 생성 중 오류:', error);
     

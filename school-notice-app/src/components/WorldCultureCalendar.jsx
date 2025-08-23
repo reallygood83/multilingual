@@ -42,6 +42,16 @@ const FilterContainer = styled.div`
   gap: 12px;
   align-items: center;
   flex-wrap: wrap;
+  
+  @media (max-width: 768px) {
+    width: 100%;
+    justify-content: stretch;
+    
+    > * {
+      flex: 1;
+      min-width: 0;
+    }
+  }
 `;
 
 const Select = styled.select`
@@ -86,20 +96,53 @@ const TodaysBanner = styled.div`
 
 const EventsGrid = styled.div`
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
-  gap: 16px;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 18px;
+  
+  @media (max-width: 768px) {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+  
+  @media (min-width: 1400px) {
+    grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+  }
 `;
 
 const EventCard = styled.div`
-  background: #f8f9fa;
+  background: #ffffff;
   border: 1px solid #e9ecef;
-  border-radius: 8px;
-  padding: 16px;
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  border-radius: 12px;
+  padding: 20px;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  position: relative;
+  overflow: hidden;
 
   &:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+    transform: translateY(-4px);
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+    border-color: #3498db;
+  }
+  
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: ${props => {
+      switch (props.type) {
+        case 'traditional': return 'linear-gradient(90deg, #2e7d32, #4caf50)';
+        case 'religious': return 'linear-gradient(90deg, #f57c00, #ff9800)';
+        case 'national': return 'linear-gradient(90deg, #1976d2, #2196f3)';
+        case 'international': return 'linear-gradient(90deg, #c2185b, #e91e63)';
+        case 'modern': return 'linear-gradient(90deg, #7b1fa2, #9c27b0)';
+        case 'seasonal': return 'linear-gradient(90deg, #00695c, #009688)';
+        default: return 'linear-gradient(90deg, #616161, #757575)';
+      }
+    }};
   }
 `;
 
@@ -174,13 +217,47 @@ const EventDescription = styled.p`
 `;
 
 const CulturalNotes = styled.div`
-  background: white;
+  background: #f8f9fa;
   border-left: 3px solid #3498db;
-  padding: 8px 12px;
+  padding: 10px 14px;
   margin-top: 12px;
-  border-radius: 0 4px 4px 0;
+  border-radius: 0 6px 6px 0;
   font-size: 13px;
-  color: #666;
+  color: #495057;
+  line-height: 1.4;
+`;
+
+const TeacherTips = styled.div`
+  background: linear-gradient(135deg, #667eea10, #764ba210);
+  border: 1px solid #e0e7ff;
+  border-radius: 8px;
+  padding: 12px 16px;
+  margin-top: 16px;
+  position: relative;
+  
+  &::before {
+    content: '👩‍🏫';
+    position: absolute;
+    top: -8px;
+    left: 12px;
+    background: white;
+    padding: 0 4px;
+    font-size: 16px;
+  }
+  
+  .tips-title {
+    font-size: 12px;
+    font-weight: 600;
+    color: #4f46e5;
+    margin-bottom: 8px;
+    margin-top: 4px;
+  }
+  
+  .tips-content {
+    font-size: 12px;
+    color: #6b7280;
+    line-height: 1.4;
+  }
 `;
 
 const EmptyState = styled.div`
@@ -188,6 +265,57 @@ const EmptyState = styled.div`
   padding: 40px 20px;
   color: #7f8c8d;
 `;
+
+// 교사용 활용 팁 생성 함수
+const generateTeacherTips = (event) => {
+  const baseActivities = {
+    traditional: [
+      '전통 의상이나 음식 사진 자료 준비하여 시각적 학습 효과 높이기',
+      '해당 문화권 전래동화나 설화를 함께 읽어보는 독서 활동',
+      '간단한 전통 공예품 만들기 체험 활동'
+    ],
+    religious: [
+      '종교적 배경 설명 시 문화적 관점에서 중립적으로 접근하기',
+      '해당 종교의 상징물이나 건축물 사진 자료 활용',
+      '다양한 종교와 믿음에 대한 포용적 태도 기르기'
+    ],
+    national: [
+      '해당 국가의 위치를 지도에서 찾아보는 지리 학습 연계',
+      '국가 상징(국기, 국가 등)과 그 의미 알아보기',
+      '우리나라 국경일과 비교하여 공통점과 차이점 찾기'
+    ],
+    international: [
+      '전 세계가 함께 기념하는 의미와 가치 토론하기',
+      '우리 생활 속에서 실천할 수 있는 방법 찾아보기',
+      '다른 나라 친구들과 어떻게 함께 기념할지 생각해보기'
+    ],
+    modern: [
+      '현대적 축제가 생겨난 배경과 변화 과정 알아보기',
+      '전통 문화와 현대 문화의 조화 방법 토론',
+      '우리만의 새로운 기념일 만들어보기 창작 활동'
+    ],
+    seasonal: [
+      '계절별 기후 변화와 생활 모습 비교하기',
+      '우리나라의 같은 계절 행사와 비교 분석',
+      '자연 환경과 문화의 관계 탐구하기'
+    ]
+  };
+
+  const gradeSpecificTips = {
+    elementary: '색칠하기, 만들기 등 체험 중심 활동으로 접근',
+    middle: '문화적 차이를 인정하고 존중하는 태도 기르기',
+    high: '세계화 시대 문화적 다양성의 중요성 토론'
+  };
+
+  const activities = baseActivities[event.type] || baseActivities.traditional;
+  const randomActivity = activities[Math.floor(Math.random() * activities.length)];
+  
+  return {
+    activity: randomActivity,
+    gradeTip: gradeSpecificTips.elementary, // 기본값으로 초등 설정
+    assessment: `${event.event} 행사의 의미와 우리 문화와의 공통점 찾기`
+  };
+};
 
 const WorldCultureCalendar = ({ showTodaysBanner = true }) => {
   const [selectedMonth, setSelectedMonth] = useState('all');
@@ -319,7 +447,7 @@ const WorldCultureCalendar = ({ showTodaysBanner = true }) => {
       <EventsGrid>
         {filteredEvents.length > 0 ? (
           filteredEvents.map((event, index) => (
-            <EventCard key={`${event.event}-${index}`}>
+            <EventCard key={`${event.event}-${index}`} type={event.type}>
               <EventHeader>
                 <EventTitle>{event.event}</EventTitle>
                 <EventDate>{event.date}</EventDate>
@@ -345,6 +473,15 @@ const WorldCultureCalendar = ({ showTodaysBanner = true }) => {
                   <strong>문화적 특징:</strong> {event.culturalNotes}
                 </CulturalNotes>
               )}
+              
+              <TeacherTips>
+                <div className="tips-title">교사용 활용 가이드</div>
+                <div className="tips-content">
+                  <strong>🎯 활동 제안:</strong> {generateTeacherTips(event).activity}<br/>
+                  <strong>📚 학급 적용:</strong> {generateTeacherTips(event).gradeTip}<br/>
+                  <strong>📝 평가 방법:</strong> {generateTeacherTips(event).assessment}
+                </div>
+              </TeacherTips>
             </EventCard>
           ))
         ) : (

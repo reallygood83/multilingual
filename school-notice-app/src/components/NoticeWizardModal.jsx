@@ -411,11 +411,20 @@ const NoticeWizardModal = ({ isOpen, onClose, onGenerate, apiKey }) => {
     toast.showProgress('AI가 전문적인 통신문을 작성하고 있습니다...', { id: 'generating' });
     
     try {
-      const result = await generateProfessionalNotice({
-        category: selectedCategory,
+      console.log('🎬 NoticeWizardModal: 통신문 생성 시작');
+      console.log('📝 selectedCategory =', selectedCategory);
+      console.log('🎓 schoolLevel =', schoolLevel); 
+      console.log('📋 formData =', formData);
+      
+      const requestPayload = {
+        category: selectedCategory, // This should be the ID like 'event_announcement', not the title
         schoolLevel,
         ...formData
-      }, apiKey);
+      };
+      
+      console.log('📤 최종 요청 페이로드 =', JSON.stringify(requestPayload, null, 2));
+      
+      const result = await generateProfessionalNotice(requestPayload, apiKey);
 
       if (result.success) {
         toast.removeToast('generating');
@@ -438,6 +447,8 @@ const NoticeWizardModal = ({ isOpen, onClose, onGenerate, apiKey }) => {
         errorMessage = 'API 사용 한도를 초과했습니다. 잠시 후 다시 시도해주세요.';
       } else if (error.message?.includes('network') || error.message?.includes('connection')) {
         errorMessage = '네트워크 연결 오류가 발생했습니다. 인터넷 연결을 확인해주세요.';
+      } else if (error.message?.includes('지원하지 않는 카테고리')) {
+        errorMessage = '선택된 카테고리에 오류가 있습니다. 다른 카테고리를 선택해보세요.';
       } else {
         errorMessage = `통신문 생성 실패: ${error.message}`;
       }
@@ -493,7 +504,11 @@ const NoticeWizardModal = ({ isOpen, onClose, onGenerate, apiKey }) => {
               <CategoryCard
                 key={category.id}
                 $selected={selectedCategory === category.id}
-                onClick={() => setSelectedCategory(category.id)}
+                onClick={() => {
+                  console.log('DEBUG: Setting category ID =', category.id);
+                  console.log('DEBUG: Category object =', category);
+                  setSelectedCategory(category.id);
+                }}
                 disabled={isGenerating}
               >
                 <h4>{category.icon} {category.title}</h4>

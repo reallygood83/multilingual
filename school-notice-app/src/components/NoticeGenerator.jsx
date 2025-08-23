@@ -453,28 +453,33 @@ const NoticeGenerator = () => {
     }
   }, [getRefinedContent, languages, debouncedNoticeData, settings.geminiApiKey, showMessage]);
 
-  const handleGenerateNotice = useCallback(async (formData) => {
-    if (!settings?.geminiApiKey) {
-      showMessage('설정에서 Gemini API 키를 먼저 입력해주세요.', 'error');
-      setShowSettingsModal(true);
-      throw new Error('Missing Gemini API key');
-    }
-    setIsGeneratingNotice(true);
+  const handleGenerateNotice = useCallback(async (generatedData) => {
+    // NoticeWizardModal에서 이미 generateProfessionalNotice가 호출되어 결과가 전달됨
+    console.log('🎯 handleGenerateNotice 받은 데이터:', generatedData);
+    
     try {
-      showMessage('AI가 통신문을 생성하고 있습니다...', 'info');
-      const result = await generateProfessionalNotice(formData, settings.geminiApiKey);
-      const generatedHtml = result?.data?.content || '';
-      if (!result?.success || !generatedHtml) throw new Error(result?.error || '통신문 생성에 실패했습니다.');
-      setNoticeData({ ...noticeData, content: generatedHtml });
+      // generatedData는 이미 생성된 통신문 데이터이므로 바로 사용
+      const generatedHtml = generatedData?.content || '';
+      if (!generatedHtml) {
+        throw new Error('생성된 통신문 내용이 없습니다.');
+      }
+      
+      // 생성된 통신문의 introText를 제목으로 사용
+      const introText = generatedData?.introText || '전문 통신문';
+      
+      setNoticeData({ 
+        ...noticeData, 
+        content: generatedHtml,
+        introText: introText
+      });
       setShowWizardModal(false);
       setEditing(true);
-      showMessage('AI 통신문이 성공적으로 생성되었습니다!', 'success');
+      showMessage('AI 전문 통신문이 성공적으로 생성되었습니다!', 'success');
     } catch (error) {
-      showMessage('통신문 생성 중 오류가 발생했습니다. API 키를 확인해주세요.', 'error');
-    } finally {
-      setIsGeneratingNotice(false);
+      console.error('통신문 적용 중 오류:', error);
+      showMessage(`통신문 적용 중 오류가 발생했습니다: ${error.message}`, 'error');
     }
-  }, [noticeData, settings?.geminiApiKey, showMessage]);
+  }, [noticeData, showMessage]);
 
   const handleGeneratePDF = useCallback(async (language = null) => {
     setIsGeneratingPDF(true);

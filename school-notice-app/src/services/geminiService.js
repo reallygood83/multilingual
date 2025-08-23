@@ -353,7 +353,8 @@ export const translateWithGemini = async (text, targetLanguage, apiKey) => {
     const languageNames = {
       'en': 'English',
       'ja': 'Japanese',
-      'zh': 'Chinese',
+      'zh': 'Chinese (Simplified)',
+      'zh-TW': 'Chinese (Traditional)',
       'es': 'Spanish',
       'fr': 'French',
       'de': 'German',
@@ -363,24 +364,52 @@ export const translateWithGemini = async (text, targetLanguage, apiKey) => {
       'pt': 'Portuguese',
       'vi': 'Vietnamese',
       'th': 'Thai',
-      'tl': 'Filipino'
+      'tl': 'Filipino',
+      'mn': 'Mongolian',
+      'my': 'Burmese (Myanmar)',
+      'km': 'Khmer (Cambodian)',
+      'lo': 'Lao',
+      'uz': 'Uzbek',
+      'kk': 'Kazakh',
+      'ky': 'Kyrgyz',
+      'ne': 'Nepali',
+      'bn': 'Bengali',
+      'ur': 'Urdu',
+      'fa': 'Persian (Farsi)',
+      'tr': 'Turkish',
+      'id': 'Indonesian',
+      'ms': 'Malay',
+      'sw': 'Swahili',
+      'am': 'Amharic',
+      'te': 'Telugu',
+      'ta': 'Tamil',
+      'ml': 'Malayalam',
+      'kn': 'Kannada',
+      'gu': 'Gujarati',
+      'or': 'Odia',
+      'pa': 'Punjabi',
+      'as': 'Assamese',
+      'si': 'Sinhala'
     };
 
     const targetLanguageName = languageNames[targetLanguage] || targetLanguage;
     
-    const prompt = `
-다음 한국어 HTML을 ${targetLanguageName}로 번역해주세요.
-중요: HTML 태그 구조와 속성(class, style, href 등)은 그대로 유지하고 텍스트 노드만 번역하세요.
-- 줄바꿈, 목록, 표, 굵게/기울임, 링크, 머리글/바닥글 등의 서식을 절대 변경하지 마세요.
-- 불필요한 텍스트를 추가하지 말고, 설명이나 코드 블록(예: \`\`\`)으로 감싸지 마세요.
-- 입력에 HTML이 포함되지 않았다면 순수 텍스트만 정중한 톤으로 번역하세요.
-- 날짜·숫자·이메일·URL 형식은 유지하세요.
-- 학교 가정통신문의 공식적이고 정중한 톤을 유지하세요.
+    const prompt = `Translate the following Korean text/HTML to ${targetLanguageName}.
 
-원문 HTML:
+CRITICAL REQUIREMENTS:
+1. PRESERVE EXACT FORMATTING: Keep all HTML tags, attributes (class, style, href, etc.), line breaks, spacing, and structure identical to the original
+2. TRANSLATE TEXT ONLY: Only translate the actual text content, never modify HTML structure or formatting elements
+3. MAINTAIN FORMALITY: Use formal, respectful tone appropriate for official school communications
+4. PRESERVE DATES/NUMBERS: Keep all dates, numbers, email addresses, and URLs in their original format
+5. NO ADDITIONS: Do not add explanations, code blocks (\`\`\`), or any extra text
+6. DIRECT OUTPUT: Return only the translated content without any wrapping or commentary
+
+If the target language is not supported or you cannot translate to ${targetLanguageName}, simply return the original Korean text unchanged.
+
+Original content:
 ${text}
 
-반환 형식: 번역된 HTML 조각만 그대로 반환(코드 펜스나 주석 없이).`;
+Translated ${targetLanguageName} content:`;
 
     const requestBody = {
       contents: [{
@@ -418,11 +447,45 @@ ${text}
     }
 
     let translatedText = candidate.content.parts.map(p => p.text || '').join('').trim();
-    // Strip possible fenced code blocks like ```html ... ```
-    translatedText = translatedText.replace(/^```(?:html)?\s*/i, '').replace(/```$/,'').trim();
-
+    
+    // Strip possible fenced code blocks like ```html ... ``` or ```
+    translatedText = translatedText.replace(/^```(?:html?)?\s*/i, '').replace(/```$/,'').trim();
+    
+    // Remove any additional wrapping or explanations
+    translatedText = translatedText.replace(/^.*?:/,'').trim(); // Remove "Translated [language] content:" prefix if present
+    
     if (!translatedText) {
-      throw new AppError('Empty translation result');
+      console.warn(`Empty translation result for language: ${targetLanguage}, returning original text`);
+      return text; // Return original text if translation fails
+    }
+
+    // Fallback: If the translation is identical to input (meaning it failed), try once more with simpler prompt
+    if (translatedText === text && targetLanguage !== 'ko') {
+      console.warn(`Translation appears unchanged for ${targetLanguage}, attempting fallback`);
+      try {
+        const fallbackPrompt = `Please translate this Korean text to ${targetLanguageName}. Maintain the same formatting and HTML structure:\n\n${text}`;
+        const fallbackResponse = await fetch(`${GEMINI_API_BASE_URL}/models/${DEFAULT_MODEL}:generateContent?key=${apiKey}`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            contents: [{ parts: [{ text: fallbackPrompt }] }],
+            generationConfig: { temperature: 0.1, maxOutputTokens: 1024 }
+          })
+        });
+        
+        if (fallbackResponse.ok) {
+          const fallbackData = await fallbackResponse.json();
+          const fallbackResult = fallbackData.candidates?.[0]?.content?.parts?.map(p => p.text || '')?.join('')?.trim();
+          if (fallbackResult && fallbackResult !== text) {
+            return fallbackResult.replace(/^```(?:html?)?\s*/i, '').replace(/```$/,'').trim();
+          }
+        }
+      } catch (fallbackError) {
+        console.warn('Fallback translation also failed:', fallbackError);
+      }
+      
+      // If all translation attempts fail, return original text
+      return text;
     }
     
     return translatedText;
@@ -433,7 +496,9 @@ ${text}
     }
     
     console.error('Gemini translation failed:', error);
-    throw new AppError(`Translation failed: ${error.message}`);
+    // Instead of throwing error, return original text as fallback for translation failures
+    console.warn(`Translation to ${targetLanguage} failed, returning original Korean text`);
+    return text;
   }
 };
 

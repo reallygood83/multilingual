@@ -6,6 +6,20 @@ import styled from 'styled-components';
  * Features: Flexible layouts, educational color coding, responsive design
  */
 
+// Helper function for subject colors with warm theme
+const getSubjectColor = (subject, opacity = 1) => {
+  const colors = {
+    korean: `rgba(245, 158, 11, ${opacity})`, // Warm amber
+    math: `rgba(59, 130, 246, ${opacity})`, // Trust blue
+    science: `rgba(16, 185, 129, ${opacity})`, // Growth green
+    social: `rgba(139, 92, 246, ${opacity})`, // Wisdom purple
+    english: `rgba(236, 72, 153, ${opacity})`, // Communication pink
+    arts: `rgba(251, 146, 60, ${opacity})`, // Creative orange
+    pe: `rgba(34, 197, 94, ${opacity})` // Energy green
+  };
+  return colors[subject] || `rgba(107, 114, 128, ${opacity})`; // Default gray
+};
+
 const BaseCard = styled.div`
   /* Layout */
   position: relative;
@@ -13,10 +27,13 @@ const BaseCard = styled.div`
   flex-direction: column;
   overflow: hidden;
   
-  /* Visual */
-  background: var(--edu-surface-primary);
-  border: 1px solid var(--edu-neutral-200);
-  transition: var(--edu-transition-all);
+  /* Visual - Enhanced warm theme matching layout */
+  background: rgba(255, 255, 255, 0.9);
+  border: 1px solid rgba(245, 158, 11, 0.2);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08), 0 1px 3px rgba(0, 0, 0, 0.05);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   
   /* Interactive states */
   ${props => props.$interactive && `
@@ -24,13 +41,14 @@ const BaseCard = styled.div`
     
     &:hover {
       transform: translateY(-2px);
-      box-shadow: var(--edu-shadow-lg);
-      border-color: var(--edu-primary-200);
+      box-shadow: 0 8px 30px rgba(245, 158, 11, 0.15), 0 4px 15px rgba(0, 0, 0, 0.1);
+      border-color: rgba(245, 158, 11, 0.3);
+      background: rgba(255, 255, 255, 0.95);
     }
     
     &:active {
       transform: translateY(-1px);
-      box-shadow: var(--edu-shadow-md);
+      box-shadow: 0 4px 20px rgba(245, 158, 11, 0.12), 0 2px 8px rgba(0, 0, 0, 0.08);
     }
   `}
   
@@ -39,23 +57,23 @@ const BaseCard = styled.div`
     switch (props.$size) {
       case 'sm':
         return `
-          border-radius: var(--edu-radius-lg);
-          box-shadow: var(--edu-shadow-sm);
+          border-radius: 12px;
+          box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06), 0 1px 3px rgba(0, 0, 0, 0.03);
         `;
       case 'lg':
         return `
-          border-radius: var(--edu-radius-2xl);
-          box-shadow: var(--edu-shadow-lg);
+          border-radius: 20px;
+          box-shadow: 0 8px 30px rgba(0, 0, 0, 0.1), 0 4px 15px rgba(0, 0, 0, 0.05);
         `;
       case 'xl':
         return `
-          border-radius: var(--edu-radius-3xl);
-          box-shadow: var(--edu-shadow-xl);
+          border-radius: 24px;
+          box-shadow: 0 12px 40px rgba(0, 0, 0, 0.12), 0 6px 20px rgba(0, 0, 0, 0.06);
         `;
       default: // md
         return `
-          border-radius: var(--edu-radius-xl);
-          box-shadow: var(--edu-shadow-md);
+          border-radius: 16px;
+          box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08), 0 1px 3px rgba(0, 0, 0, 0.05);
         `;
     }
   }}
@@ -65,29 +83,34 @@ const BaseCard = styled.div`
     switch (props.$variant) {
       case 'elevated':
         return `
-          background: var(--edu-surface-elevated);
-          box-shadow: var(--edu-shadow-lg);
+          background: rgba(255, 255, 255, 0.95);
+          box-shadow: 0 8px 30px rgba(245, 158, 11, 0.12), 0 4px 15px rgba(0, 0, 0, 0.08);
           border: none;
+          backdrop-filter: blur(16px);
         `;
       case 'outlined':
         return `
-          background: var(--edu-surface-primary);
-          border: 2px solid var(--edu-neutral-300);
+          background: rgba(255, 255, 255, 0.7);
+          border: 2px solid rgba(245, 158, 11, 0.3);
           box-shadow: none;
+          backdrop-filter: blur(8px);
         `;
       case 'filled':
         return `
-          background: var(--edu-surface-tertiary);
+          background: linear-gradient(135deg, rgba(254, 247, 237, 0.9) 0%, rgba(255, 251, 235, 0.9) 100%);
           border: none;
-          box-shadow: var(--edu-shadow-inner);
+          box-shadow: inset 0 2px 4px rgba(245, 158, 11, 0.08);
+          backdrop-filter: blur(10px);
         `;
       case 'gradient':
         return `
           background: linear-gradient(135deg, 
-            var(--edu-surface-primary) 0%, 
-            var(--edu-surface-secondary) 100%);
-          border: 1px solid var(--edu-neutral-100);
-          box-shadow: var(--edu-shadow-md);
+            rgba(255, 255, 255, 0.95) 0%, 
+            rgba(254, 247, 237, 0.95) 50%,
+            rgba(240, 249, 255, 0.95) 100%);
+          border: 1px solid rgba(245, 158, 11, 0.2);
+          box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08), 0 1px 3px rgba(0, 0, 0, 0.05);
+          backdrop-filter: blur(12px);
         `;
       default: // standard
         return '';
@@ -99,33 +122,35 @@ const BaseCard = styled.div`
     switch (props.$importance) {
       case 'low':
         return `
-          border-left: 4px solid var(--edu-importance-low);
+          border-left: 4px solid rgba(148, 163, 184, 0.6);
         `;
       case 'medium':
         return `
-          border-left: 4px solid var(--edu-importance-medium);
+          border-left: 4px solid rgba(59, 130, 246, 0.6);
         `;
       case 'high':
         return `
-          border-left: 4px solid var(--edu-importance-high);
+          border-left: 4px solid #f59e0b;
           background: linear-gradient(135deg, 
-            var(--edu-surface-primary) 0%, 
-            rgba(245, 158, 11, 0.02) 100%);
+            rgba(255, 255, 255, 0.9) 0%, 
+            rgba(254, 247, 237, 0.95) 100%);
+          box-shadow: 0 4px 20px rgba(245, 158, 11, 0.1), 0 1px 3px rgba(0, 0, 0, 0.05);
         `;
       case 'critical':
         return `
-          border-left: 4px solid var(--edu-importance-critical);
+          border-left: 4px solid #dc2626;
           background: linear-gradient(135deg, 
-            var(--edu-surface-primary) 0%, 
-            rgba(239, 68, 68, 0.02) 100%);
+            rgba(255, 255, 255, 0.9) 0%, 
+            rgba(254, 242, 242, 0.95) 100%);
+          box-shadow: 0 4px 20px rgba(220, 38, 38, 0.08), 0 1px 3px rgba(0, 0, 0, 0.05);
         `;
       case 'urgent':
         return `
-          border: 2px solid var(--edu-importance-urgent);
+          border: 2px solid #dc2626;
           background: linear-gradient(135deg, 
-            var(--edu-surface-primary) 0%, 
-            rgba(220, 38, 38, 0.03) 100%);
-          box-shadow: 0 4px 14px 0 rgba(220, 38, 38, 0.1);
+            rgba(255, 255, 255, 0.95) 0%, 
+            rgba(254, 242, 242, 0.95) 100%);
+          box-shadow: 0 4px 20px rgba(220, 38, 38, 0.12), 0 2px 8px rgba(0, 0, 0, 0.06);
         `;
       default:
         return '';
@@ -141,7 +166,9 @@ const BaseCard = styled.div`
       left: 0;
       right: 0;
       height: 3px;
-      background: var(--edu-subject-${props.$subject});
+      background: linear-gradient(90deg, 
+        ${getSubjectColor(props.$subject)} 0%, 
+        ${getSubjectColor(props.$subject, 0.7)} 100%);
     }
   `}
   
@@ -153,7 +180,7 @@ const BaseCard = styled.div`
   /* Responsive design */
   @media (max-width: 768px) {
     ${props => props.$responsive && `
-      margin: 0 -var(--edu-space-4);
+      margin: 0 -1rem;
       border-radius: 0;
       border-left: none;
       border-right: none;
@@ -164,16 +191,16 @@ const BaseCard = styled.div`
 const CardHeader = styled.div`
   padding: ${props => {
     switch (props.$size) {
-      case 'sm': return 'var(--edu-card-padding-sm) var(--edu-card-padding-sm) 0';
-      case 'lg': return 'var(--edu-card-padding-lg) var(--edu-card-padding-lg) 0';
-      default: return 'var(--edu-card-padding-md) var(--edu-card-padding-md) 0';
+      case 'sm': return '1rem 1rem 0';
+      case 'lg': return '2rem 2rem 0';
+      default: return '1.5rem 1.5rem 0';
     }
   }};
   
   ${props => props.$divided && `
-    border-bottom: 1px solid var(--edu-neutral-200);
-    margin-bottom: var(--edu-space-4);
-    padding-bottom: var(--edu-space-4);
+    border-bottom: 1px solid rgba(203, 213, 225, 0.5);
+    margin-bottom: 1rem;
+    padding-bottom: 1rem;
   `}
 `;
 
@@ -181,9 +208,9 @@ const CardBody = styled.div`
   flex: 1;
   padding: ${props => {
     switch (props.$size) {
-      case 'sm': return props.$hasHeader ? 'var(--edu-card-padding-sm)' : 'var(--edu-card-padding-sm)';
-      case 'lg': return props.$hasHeader ? 'var(--edu-card-padding-lg)' : 'var(--edu-card-padding-lg)';
-      default: return props.$hasHeader ? 'var(--edu-card-padding-md)' : 'var(--edu-card-padding-md)';
+      case 'sm': return props.$hasHeader ? '1rem' : '1rem';
+      case 'lg': return props.$hasHeader ? '2rem' : '2rem';
+      default: return props.$hasHeader ? '1.5rem' : '1.5rem';
     }
   }};
   
@@ -195,22 +222,22 @@ const CardBody = styled.div`
 const CardFooter = styled.div`
   padding: ${props => {
     switch (props.$size) {
-      case 'sm': return '0 var(--edu-card-padding-sm) var(--edu-card-padding-sm)';
-      case 'lg': return '0 var(--edu-card-padding-lg) var(--edu-card-padding-lg)';
-      default: return '0 var(--edu-card-padding-md) var(--edu-card-padding-md)';
+      case 'sm': return '0 1rem 1rem';
+      case 'lg': return '0 2rem 2rem';
+      default: return '0 1.5rem 1.5rem';
     }
   }};
   
   ${props => props.$divided && `
-    border-top: 1px solid var(--edu-neutral-200);
-    margin-top: var(--edu-space-4);
-    padding-top: var(--edu-space-4);
+    border-top: 1px solid rgba(203, 213, 225, 0.5);
+    margin-top: 1rem;
+    padding-top: 1rem;
   `}
   
   ${props => props.$actions && `
     display: flex;
     justify-content: flex-end;
-    gap: var(--edu-space-2);
+    gap: 0.5rem;
     align-items: center;
     flex-wrap: wrap;
     
@@ -226,23 +253,23 @@ const CardFooter = styled.div`
 `;
 
 const CardTitle = styled.h3`
-  margin: 0 0 var(--edu-space-2) 0;
-  font-size: var(--edu-font-size-lg);
-  font-weight: var(--edu-font-weight-semibold);
-  line-height: var(--edu-leading-tight);
-  color: var(--edu-text-primary);
+  margin: 0 0 0.5rem 0;
+  font-size: 1.125rem;
+  font-weight: 600;
+  line-height: 1.25;
+  color: #1e293b;
   
   ${props => {
     switch (props.$size) {
       case 'sm':
         return `
-          font-size: var(--edu-font-size-base);
-          font-weight: var(--edu-font-weight-medium);
+          font-size: 1rem;
+          font-weight: 500;
         `;
       case 'lg':
         return `
-          font-size: var(--edu-font-size-xl);
-          font-weight: var(--edu-font-weight-semibold);
+          font-size: 1.25rem;
+          font-weight: 600;
         `;
       default:
         return '';
@@ -252,27 +279,27 @@ const CardTitle = styled.h3`
 
 const CardSubtitle = styled.p`
   margin: 0;
-  font-size: var(--edu-font-size-sm);
-  font-weight: var(--edu-font-weight-normal);
-  line-height: var(--edu-leading-normal);
-  color: var(--edu-text-secondary);
+  font-size: 0.875rem;
+  font-weight: 400;
+  line-height: 1.5;
+  color: #64748b;
 `;
 
 const CardDescription = styled.p`
-  margin: var(--edu-space-2) 0 0 0;
-  font-size: var(--edu-font-size-sm);
-  line-height: var(--edu-leading-relaxed);
-  color: var(--edu-text-tertiary);
+  margin: 0.5rem 0 0 0;
+  font-size: 0.875rem;
+  line-height: 1.75;
+  color: #94a3b8;
 `;
 
 const StatusBadge = styled.span`
   display: inline-flex;
   align-items: center;
-  gap: var(--edu-space-1);
-  padding: var(--edu-space-1) var(--edu-space-2);
-  border-radius: var(--edu-radius-full);
-  font-size: var(--edu-font-size-xs);
-  font-weight: var(--edu-font-weight-medium);
+  gap: 0.25rem;
+  padding: 0.25rem 0.5rem;
+  border-radius: 9999px;
+  font-size: 0.75rem;
+  font-weight: 500;
   text-transform: uppercase;
   letter-spacing: 0.025em;
   
@@ -280,28 +307,28 @@ const StatusBadge = styled.span`
     switch (props.$status) {
       case 'success':
         return `
-          background: var(--edu-success-100);
-          color: var(--edu-success-800);
+          background: rgba(34, 197, 94, 0.1);
+          color: rgba(21, 128, 61, 1);
         `;
       case 'warning':
         return `
-          background: var(--edu-warning-100);
-          color: var(--edu-warning-800);
+          background: rgba(245, 158, 11, 0.1);
+          color: rgba(146, 64, 14, 1);
         `;
       case 'error':
         return `
-          background: var(--edu-error-100);
-          color: var(--edu-error-800);
+          background: rgba(239, 68, 68, 0.1);
+          color: rgba(153, 27, 27, 1);
         `;
       case 'info':
         return `
-          background: var(--edu-primary-100);
-          color: var(--edu-primary-800);
+          background: rgba(59, 130, 246, 0.1);
+          color: rgba(30, 64, 175, 1);
         `;
       default:
         return `
-          background: var(--edu-neutral-100);
-          color: var(--edu-neutral-700);
+          background: rgba(148, 163, 184, 0.1);
+          color: rgba(71, 85, 105, 1);
         `;
     }
   }}

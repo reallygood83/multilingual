@@ -30,7 +30,8 @@ const AppContainer = styled.div`
   max-width: 1600px;
   margin: 0 auto;
   padding: 20px;
-  background: #ffffff;
+  background: var(--surface-secondary);
+  color: var(--text-primary);
   font-family: 'Inter', 'Pretendard', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   min-height: 100vh;
   will-change: scroll-position;
@@ -41,14 +42,17 @@ const MainContent = styled.main`
   gap: 20px;
   align-items: flex-start;
   margin-top: 20px;
+  justify-content: center; /* Center content for consistent alignment */
 `;
 
 const InputSection = styled.div`
   flex: 1;
-  max-width: 800px;
-  background: #ffffff;
-  border-radius: 8px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  width: 100%;
+  max-width: 880px;
+  background: var(--surface-primary);
+  border-radius: var(--radius-md, 10px);
+  box-shadow: var(--elevation-1, 0 2px 4px rgba(0,0,0,0.1));
+  border: 1px solid var(--neutral-200);
   padding: 20px;
 `;
 
@@ -56,18 +60,21 @@ const InputSection = styled.div`
 const ControlPanel = styled.div`
   position: sticky;
   top: 0;
-  background: #ffffff;
+  background: var(--surface-primary);
   padding: 24px;
-  border-radius: 8px;
+  border-radius: var(--radius-md, 10px);
   margin-bottom: 24px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  box-shadow: var(--elevation-1, 0 2px 8px rgba(0, 0, 0, 0.1));
   z-index: 100;
-  border: 1px solid #e0e0e0;
+  border: 1px solid var(--neutral-200);
+  max-width: 880px;
+  margin-left: auto;
+  margin-right: auto; /* Center to align with InputSection */
 `;
 
 const Title = styled.h2`
   margin: 0 0 20px 0;
-  color: #333333;
+  color: var(--text-primary);
   font-size: 28px;
   font-weight: 700;
   display: flex;
@@ -81,9 +88,9 @@ const APIStatus = styled.div`
   gap: 12px;
   margin-bottom: 16px;
   padding: 12px;
-  background: #f8f9fa;
+  background: var(--surface-secondary);
   border-radius: 6px;
-  border: 1px solid #e9ecef;
+  border: 1px solid var(--neutral-200);
 `;
 
 const StatusIndicator = styled.div`
@@ -128,7 +135,7 @@ const LanguageSelector = styled.div`
 
 const LanguageDropdown = styled.select`
   padding: 8px 12px;
-  border: 2px solid #e9ecef;
+  border: 2px solid var(--neutral-200);
   border-radius: 8px;
   background: white;
   font-size: 14px;
@@ -139,13 +146,13 @@ const LanguageDropdown = styled.select`
   min-width: 200px;
   
   &:hover {
-    border-color: #3498db;
+    border-color: var(--primary-500);
   }
   
   &:focus {
     outline: none;
-    border-color: #3498db;
-    box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1);
+    border-color: var(--primary-600);
+    box-shadow: 0 0 0 3px rgba(31, 58, 95, 0.15);
   }
   
   @media (max-width: 768px) {

@@ -231,7 +231,8 @@ const ChevronIcon = styled.span`
 
 const languages = [
   { code: 'en', name: '영어', native: 'English', flag: '🇺🇸' },
-  { code: 'zh', name: '중국어', native: '中文', flag: '🇨🇳' },
+  { code: 'zh', name: '중국어(간체)', native: '中文(简体)', flag: '🇨🇳' },
+  { code: 'zh-TW', name: '중국어(번체)', native: '中文(繁體)', flag: '🇹🇼' },
   { code: 'ja', name: '일본어', native: '日本語', flag: '🇯🇵' },
   { code: 'ko', name: '한국어', native: '한국어', flag: '🇰🇷' },
   { code: 'vi', name: '베트남어', native: 'Tiếng Việt', flag: '🇻🇳' },
@@ -250,6 +251,17 @@ const languages = [
   { code: 'my', name: '미얀마어', native: 'မြန်မာ', flag: '🇲🇲' },
   { code: 'km', name: '크메르어', native: 'ខ្មែរ', flag: '🇰🇭' },
   { code: 'lo', name: '라오어', native: 'ລາວ', flag: '🇱🇦' },
+  { code: 'es', name: '스페인어', native: 'Español', flag: '🇪🇸' },
+  { code: 'fr', name: '프랑스어', native: 'Français', flag: '🇫🇷' },
+  { code: 'de', name: '독일어', native: 'Deutsch', flag: '🇩🇪' },
+  { code: 'pt', name: '포르투갈어', native: 'Português', flag: '🇵🇹' },
+  { code: 'tr', name: '터키어', native: 'Türkçe', flag: '🇹🇷' },
+  { code: 'fa', name: '페르시아어', native: 'فارسی', flag: '🇮🇷' },
+  { code: 'ur', name: '우르두어', native: 'اردو', flag: '🇵🇰' },
+  { code: 'bn', name: '벵골어', native: 'বাংলা', flag: '🇧🇩' },
+  { code: 'te', name: '텔루구어', native: 'తెలుగు', flag: '🇮🇳' },
+  { code: 'ta', name: '타밀어', native: 'தமிழ்', flag: '🇮🇳' },
+  { code: 'sw', name: '스와힐리어', native: 'Kiswahili', flag: '🇰🇪' },
 ];
 
 /**

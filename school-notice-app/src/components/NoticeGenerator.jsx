@@ -28,6 +28,7 @@ const NoticeHeader = lazy(() => import('./NoticeHeader'));
 const NoticeContent = lazy(() => import('./NoticeContent'));
 const NoticeFooter = lazy(() => import('./NoticeFooter'));
 const SettingsPanel = lazy(() => import('./SettingsPanel'));
+const SettingsModal = lazy(() => import('./SettingsModal'));
 const NoticeWizardModal = lazy(() => import('./NoticeWizardModal'));
 const SummaryBox = lazy(() => import('./SummaryBox'));
 
@@ -62,14 +63,12 @@ const InputSection = styled.div`
 `;
 
 const ControlPanel = styled.div`
-  position: sticky;
-  top: 0;
+  position: static;
   background: var(--surface-primary);
   padding: 24px;
   border-radius: var(--radius-md, 10px);
   margin-bottom: 24px;
   box-shadow: var(--elevation-1, 0 2px 8px rgba(0, 0, 0, 0.1));
-  z-index: 100;
   border: 1px solid var(--neutral-200);
   max-width: 880px;
   margin-left: auto;
@@ -254,13 +253,13 @@ const NoticeGenerator = () => {
   const [statusMessage, setStatusMessage] = useState(null);
   const [apiStatus, setApiStatus] = useState('checking');
   const [lastError, setLastError] = useState(null);
-  const [showSettings, setShowSettings] = useState(false);
   const [settings, setSettings] = useState(() => {
     const saved = localStorage.getItem('schoolNoticeSettings');
     return saved ? JSON.parse(saved) : { geminiApiKey: '', schoolName: 'OO초등학교', schoolYear: '2024학년도', schoolAddress: '', schoolPhone: '', publisher: '교장 김나나', manager: '교사 김문정', managerEmail: '', templateFile: null };
   });
   const [templateAnalysis, setTemplateAnalysis] = useState(null);
   const [showWizardModal, setShowWizardModal] = useState(false);
+  const [showSettingsModal, setShowSettingsModal] = useState(false);
   const [isGeneratingNotice, setIsGeneratingNotice] = useState(false);
 
   // Phase 1 State
@@ -457,7 +456,7 @@ const NoticeGenerator = () => {
   const handleGenerateNotice = useCallback(async (formData) => {
     if (!settings?.geminiApiKey) {
       showMessage('설정에서 Gemini API 키를 먼저 입력해주세요.', 'error');
-      setShowSettings(true);
+      setShowSettingsModal(true);
       throw new Error('Missing Gemini API key');
     }
     setIsGeneratingNotice(true);
@@ -500,7 +499,7 @@ const NoticeGenerator = () => {
       <ControlPanel>
         <Title>
           <span>🌍 AI 다국어 가정통신문 시스템</span>
-          <OptimizedButton variant="outline" onClick={() => setShowSettings(true)} style={{ fontSize: '14px', padding: '8px 16px' }}>⚙️ 설정</OptimizedButton>
+          <OptimizedButton variant="outline" onClick={() => setShowSettingsModal(true)} style={{ fontSize: '14px', padding: '8px 16px' }}>⚙️ 설정</OptimizedButton>
         </Title>
         
         <APIStatus>
@@ -589,9 +588,16 @@ const NoticeGenerator = () => {
         </InputSection>
       </MainContent>
 
-      <Suspense fallback={<LoadingSpinner center padding="40px" text="설정 로딩 중..." />}>
-        <SettingsPanel isOpen={showSettings} onClose={() => setShowSettings(false)} settings={settings} onSettingsChange={handleSettingsChange} onTemplateUpload={handleTemplateUpload} />
-      </Suspense>
+      {showSettingsModal && (
+        <Suspense fallback={<LoadingSpinner center padding="40px" text="설정 로딩 중..." />}>
+          <SettingsModal 
+            isOpen={showSettingsModal} 
+            onClose={() => setShowSettingsModal(false)} 
+            settings={settings} 
+            onSave={handleSettingsChange} 
+          />
+        </Suspense>
+      )}
 
       {templateAnalysis && <TemplateAnalysisDisplay analysis={templateAnalysis} />}
 

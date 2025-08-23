@@ -293,6 +293,22 @@ const NoticeHeader = memo(({
           />
         </InfoItem>
       </InfoBar>
+
+      {/* 통신문 소개글 섹션 */}
+      <div style={{ marginTop: '12px' }}>
+        <EditableTextArea
+          value={data.introText || ''}
+          onChange={(e) => handleFieldChange('introText', e.target.value)}
+          $editing={editing}
+          disabled={!editing}
+          placeholder={editing ? '통신문 소개글을 입력하세요 (예: 안녕하세요. 학부모님께 전해드립니다.)' : ''}
+          style={{ 
+            fontSize: '14px', 
+            minHeight: editing ? '60px' : (data.introText ? 'auto' : '0'),
+            display: editing || data.introText ? 'block' : 'none'
+          }}
+        />
+      </div>
     </HeaderContainer>
   );
 });

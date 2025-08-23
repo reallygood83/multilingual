@@ -151,7 +151,7 @@ export const DEFAULT_NOTICE_DATA = {
   address: '경기도 안양시',
   phone: '031)000-0000',
   logoUrl: '',
-  introText: '',
+  introText: '안녕하세요. 학부모님께 전해드립니다.',
   content: '',
   attachmentDescription: '2025학년도 평촌초 영어회화전문강사 지원자000',
   attachments: [

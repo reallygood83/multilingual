@@ -122,7 +122,7 @@ const PROFESSIONAL_CATEGORY_PROMPTS = {
     description: '학교 행사에 대한 전문적이고 상세한 안내',
     template: `교육 전문가로서 학부모님들께 학교 행사를 안내하는 공식적이면서도 따뜻한 통신문을 작성해주세요.
 
-행사 정보:
+다음은 실제 행사 정보입니다. 이 정보를 바탕으로 통신문을 작성하세요:
 - 행사명: {eventName}
 - 일시: {eventDate}
 - 장소: {eventLocation}
@@ -132,6 +132,8 @@ const PROFESSIONAL_CATEGORY_PROMPTS = {
 - 일정표: {eventSchedule}
 - 주의사항: {precautions}
 - 참여 방법: {participationMethod}
+
+**중요**: 위의 정보들을 그대로 사용하되, 중괄호 형태의 변수명({eventName} 등)을 출력하지 말고 실제 내용을 자연스럽게 문장에 포함시켜 작성하세요.
 
 다음 구조로 작성해주세요:
 

@@ -444,11 +444,21 @@ export const translateWithGemini = async (text, targetLanguage, apiKey) => {
 
 CRITICAL REQUIREMENTS:
 1. PRESERVE EXACT FORMATTING: Keep all HTML tags, attributes (class, style, href, etc.), line breaks, spacing, and structure identical to the original
-2. TRANSLATE TEXT ONLY: Only translate the actual text content, never modify HTML structure or formatting elements
-3. MAINTAIN FORMALITY: Use formal, respectful tone appropriate for official school communications
-4. PRESERVE DATES/NUMBERS: Keep all dates, numbers, email addresses, and URLs in their original format
-5. NO ADDITIONS: Do not add explanations, code blocks (\`\`\`), or any extra text
-6. DIRECT OUTPUT: Return only the translated content without any wrapping or commentary
+2. TRANSLATE TEXT ONLY: Only translate the actual text content, never modify HTML structure, CSS classes, or formatting elements
+3. MAINTAIN VISUAL HIERARCHY: Preserve all visual formatting like headings, bullet points, numbered lists, and indentation
+4. KEEP STRUCTURAL ELEMENTS: Maintain all <div>, <span>, <h1>-<h6>, <ul>, <li>, <p>, <strong>, <em> tags and their styling
+5. PRESERVE NOTICE FORMATTING: Keep section titles, info items, bullet lists, and professional notice structure intact
+6. MAINTAIN FORMALITY: Use formal, respectful tone appropriate for official school communications
+7. PRESERVE DATES/NUMBERS: Keep all dates, numbers, email addresses, and URLs in their original format
+8. NO ADDITIONS: Do not add explanations, code blocks (\`\`\`), or any extra text
+9. DIRECT OUTPUT: Return only the translated content without any wrapping or commentary
+
+EXAMPLE OF CORRECT FORMAT PRESERVATION:
+If original has: <h3 class="notice-section-title">📋 행사 일정</h3>
+Translate to: <h3 class="notice-section-title">📋 Event Schedule</h3>
+
+If original has: <div class="notice-info-item"><strong>날짜:</strong> 2025년 3월 15일</div>
+Translate to: <div class="notice-info-item"><strong>Date:</strong> March 15, 2025</div>
 
 If the target language is not supported or you cannot translate to ${targetLanguageName}, simply return the original Korean text unchanged.
 

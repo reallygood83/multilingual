@@ -614,38 +614,228 @@ export async function generateProfessionalNotice(requestData, apiKeyOverride = u
 
 /**
  * 전문적인 HTML 변환 함수
+ * 사용자가 요청한 명확하고 구조화된 형식으로 변환
  */
 function convertToProfessionalHTML(text) {
   if (!text) return '';
   
-  let html = text.replace(/\n/g, '<br>');
+  // HTML 컨테이너로 시작
+  let html = '<div class="professional-notice-content">';
   
-  // 제목 패턴 (1., 2., 3. 또는 **제목** 형식)
-  html = html.replace(/^(\d+\.\s*\*\*.*?\*\*)/gm, '<h3 class="notice-section-title">$1</h3>');
-  html = html.replace(/^\*\*(.*?)\*\*/gm, '<h3 class="notice-section-title">$1</h3>');
+  // 텍스트를 줄 단위로 분할하여 처리
+  const lines = text.split('\n').filter(line => line.trim() !== '');
+  let currentSection = [];
+  let inBulletList = false;
   
-  // 강조 표시
-  html = html.replace(/\*\*(.*?)\*\*/g, '<strong class="notice-emphasis">$1</strong>');
-  
-  // 번호 목록 (1. 2. 3. 형식)
-  html = html.replace(/^(\d+\.)\s*([^<\n]*?)(?=<br>|$)/gm, 
-    '<p class="notice-list-item"><span class="notice-list-number">$1</span> $2</p>');
-  
-  // 불릿 포인트 (- 또는 • 형식)
-  html = html.replace(/^[•\-]\s*([^<\n]*?)(?=<br>|$)/gm, 
-    '<p class="notice-bullet-item"><span class="notice-bullet">•</span> $1</p>');
-  
-  // 단락 정리
-  html = html.replace(/<br><br>/g, '</p><p>');
-  
-  // 전체를 컨테이너로 감싸기
-  if (!html.startsWith('<')) {
-    html = '<div class="professional-notice-content"><p>' + html + '</p></div>';
-  } else {
-    html = '<div class="professional-notice-content">' + html + '</div>';
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i].trim();
+    
+    if (!line) continue;
+    
+    // 1. 제목 감지 (숫자. **제목** 형식 또는 **제목** 형식)
+    if (line.match(/^\d+\.\s*\*\*.*?\*\*/) || line.match(/^\*\*[^*]+\*\*\s*$/)) {
+      // 이전 섹션 완료
+      if (currentSection.length > 0) {
+        html += processSection(currentSection);
+        currentSection = [];
+      }
+      
+      // 제목 처리
+      const titleText = line.replace(/^\d+\.\s*/, '').replace(/\*\*/g, '').trim();
+      html += `<h3 class="notice-section-title">${titleText}</h3>`;
+      inBulletList = false;
+      continue;
+    }
+    
+    // 2. 중요 정보 라벨 감지 (**라벨:** 형식)
+    if (line.match(/^\*\*[^*:]+:\*\*/)) {
+      // 이전 불릿 리스트 종료
+      if (inBulletList) {
+        html += '</ul>';
+        inBulletList = false;
+      }
+      
+      const labelMatch = line.match(/^\*\*([^*:]+):\*\*\s*(.*)$/);
+      if (labelMatch) {
+        const label = labelMatch[1].trim();
+        const content = labelMatch[2].trim();
+        html += `<div class="notice-info-item">`;
+        html += `<span class="notice-label">${label}:</span> `;
+        html += `<span class="notice-value">${content}</span>`;
+        html += `</div>`;
+        continue;
+      }
+    }
+    
+    // 3. 불릿 포인트 감지 (-, •, ▶ 형식)
+    if (line.match(/^[-•▶]\s/)) {
+      if (!inBulletList) {
+        html += '<ul class="notice-bullet-list">';
+        inBulletList = true;
+      }
+      const bulletContent = line.replace(/^[-•▶]\s/, '').trim();
+      html += `<li class="notice-bullet-item">${formatInlineText(bulletContent)}</li>`;
+      continue;
+    }
+    
+    // 4. 번호 목록 감지 (1. 2. 3. 형식)
+    if (line.match(/^\d+\.\s/)) {
+      if (inBulletList) {
+        html += '</ul>';
+        inBulletList = false;
+      }
+      
+      const numberMatch = line.match(/^(\d+)\.\s(.*)$/);
+      if (numberMatch) {
+        const number = numberMatch[1];
+        const content = numberMatch[2];
+        html += `<div class="notice-numbered-item">`;
+        html += `<span class="notice-number">${number}.</span> `;
+        html += `<span class="notice-content">${formatInlineText(content)}</span>`;
+        html += `</div>`;
+      }
+      continue;
+    }
+    
+    // 5. 일반 텍스트
+    if (inBulletList && !line.match(/^[-•▶]\s/)) {
+      html += '</ul>';
+      inBulletList = false;
+    }
+    
+    // 일반 단락으로 처리
+    html += `<p class="notice-paragraph">${formatInlineText(line)}</p>`;
   }
   
+  // 미완료된 불릿 리스트 종료
+  if (inBulletList) {
+    html += '</ul>';
+  }
+  
+  html += '</div>';
+  
+  // CSS 스타일 추가
+  html += `
+<style>
+.professional-notice-content {
+  font-family: 'Malgun Gothic', '맑은 고딕', Arial, sans-serif;
+  line-height: 1.6;
+  color: #333;
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 20px;
+}
+
+.notice-section-title {
+  color: #1a5490;
+  font-size: 18px;
+  font-weight: bold;
+  margin: 25px 0 15px 0;
+  padding-bottom: 5px;
+  border-bottom: 2px solid #e8f4fd;
+  background: linear-gradient(90deg, #f8fcff 0%, transparent 100%);
+  padding: 10px 15px;
+  border-left: 4px solid #1a5490;
+}
+
+.notice-info-item {
+  margin: 8px 0;
+  padding: 8px 12px;
+  background: #f9f9f9;
+  border-radius: 5px;
+  border-left: 3px solid #007bff;
+}
+
+.notice-label {
+  font-weight: bold;
+  color: #1a5490;
+  margin-right: 8px;
+}
+
+.notice-value {
+  color: #333;
+}
+
+.notice-bullet-list {
+  margin: 12px 0;
+  padding-left: 0;
+  list-style: none;
+}
+
+.notice-bullet-item {
+  margin: 6px 0;
+  padding-left: 20px;
+  position: relative;
+}
+
+.notice-bullet-item::before {
+  content: '•';
+  color: #007bff;
+  font-size: 16px;
+  font-weight: bold;
+  position: absolute;
+  left: 0;
+  top: 0;
+}
+
+.notice-numbered-item {
+  margin: 10px 0;
+  padding: 8px 12px;
+  background: #f8f9fa;
+  border-radius: 5px;
+  border-left: 3px solid #28a745;
+}
+
+.notice-number {
+  font-weight: bold;
+  color: #28a745;
+  margin-right: 8px;
+}
+
+.notice-content {
+  color: #333;
+}
+
+.notice-paragraph {
+  margin: 10px 0;
+  text-align: justify;
+  line-height: 1.8;
+}
+
+.notice-emphasis {
+  color: #1a5490;
+  font-weight: bold;
+}
+
+.notice-important {
+  color: #dc3545;
+  font-weight: bold;
+}
+</style>`;
+  
   return html;
+}
+
+/**
+ * 인라인 텍스트 서식 처리
+ */
+function formatInlineText(text) {
+  if (!text) return '';
+  
+  // 강조 표시 (**텍스트**)
+  text = text.replace(/\*\*([^*]+)\*\*/g, '<span class="notice-emphasis">$1</span>');
+  
+  // 중요 표시 (!텍스트!)
+  text = text.replace(/!([^!]+)!/g, '<span class="notice-important">$1</span>');
+  
+  return text;
+}
+
+/**
+ * 섹션 처리 (사용하지 않지만 호환성을 위해 유지)
+ */
+function processSection(section) {
+  return section.map(line => `<p class="notice-paragraph">${formatInlineText(line)}</p>`).join('');
 }
 
 /**

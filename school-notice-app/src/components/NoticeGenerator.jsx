@@ -14,7 +14,7 @@ import {
   addCulturalNotes,
   extractKeyInfo
 } from '../services/geminiService';
-import { generateNoticeWithAI } from '../services/noticeGenerationService';
+import { generateProfessionalNotice } from '../services/professionalNoticeService';
 import { 
   DEFAULT_NOTICE_DATA, 
   SUPPORTED_LANGUAGES, 
@@ -462,7 +462,7 @@ const NoticeGenerator = () => {
     setIsGeneratingNotice(true);
     try {
       showMessage('AI가 통신문을 생성하고 있습니다...', 'info');
-      const result = await generateNoticeWithAI(formData, settings.geminiApiKey);
+      const result = await generateProfessionalNotice(formData, settings.geminiApiKey);
       const generatedHtml = result?.data?.content || '';
       if (!result?.success || !generatedHtml) throw new Error(result?.error || '통신문 생성에 실패했습니다.');
       setNoticeData({ ...noticeData, content: generatedHtml });

@@ -146,6 +146,20 @@ const NoticeContent = memo(({
     }
   }, [data, onChange]);
 
+  // ReactQuill 에디터 설정 개선
+  const quillProps = useMemo(() => ({
+    theme: "snow",
+    value: data.content || '',
+    onChange: handleContentChange,
+    modules: modules,
+    formats: formats,
+    placeholder: "통신문 내용을 입력하세요. 예: 학교 행사 안내, 공지사항, 가정통신문 등",
+    preserveWhitespace: true,
+    bounds: 'self',
+    scrollingContainer: null,
+    readOnly: false
+  }), [data.content, handleContentChange, modules, formats]);
+
 
 
   return (
@@ -154,18 +168,13 @@ const NoticeContent = memo(({
       {editing ? (
         <EditableContent>
           <ReactQuill
-            theme="snow"
-            value={data.content || ''}
-            onChange={handleContentChange}
-            modules={modules}
-            formats={formats}
-            placeholder="통신문 내용을 입력하세요. 예: 학교 행사 안내, 공지사항, 가정통신문 등"
+            {...quillProps}
           />
         </EditableContent>
       ) : (
         <ReadOnlyContent
           dangerouslySetInnerHTML={{ 
-            __html: data.content || '<p>통신문 내용을 작성하려면 편집 모드를 활성화해주세요.</p>' 
+            __html: data.content || '' 
           }}
         />
       )}

@@ -440,32 +440,44 @@ export const translateWithGemini = async (text, targetLanguage, apiKey) => {
 
     const targetLanguageName = languageNames[targetLanguage] || targetLanguage;
     
-    const prompt = `Translate the following Korean text/HTML to ${targetLanguageName}.
+    const prompt = `You are a professional translator. Translate the following Korean text/HTML to ${targetLanguageName}.
 
-CRITICAL REQUIREMENTS:
-1. PRESERVE EXACT FORMATTING: Keep all HTML tags, attributes (class, style, href, etc.), line breaks, spacing, and structure identical to the original
-2. TRANSLATE TEXT ONLY: Only translate the actual text content, never modify HTML structure, CSS classes, or formatting elements
-3. MAINTAIN VISUAL HIERARCHY: Preserve all visual formatting like headings, bullet points, numbered lists, and indentation
-4. KEEP STRUCTURAL ELEMENTS: Maintain all <div>, <span>, <h1>-<h6>, <ul>, <li>, <p>, <strong>, <em> tags and their styling
-5. PRESERVE NOTICE FORMATTING: Keep section titles, info items, bullet lists, and professional notice structure intact
-6. MAINTAIN FORMALITY: Use formal, respectful tone appropriate for official school communications
-7. PRESERVE DATES/NUMBERS: Keep all dates, numbers, email addresses, and URLs in their original format
-8. NO ADDITIONS: Do not add explanations, code blocks (\`\`\`), or any extra text
-9. DIRECT OUTPUT: Return only the translated content without any wrapping or commentary
+🚨 ABSOLUTE FORMATTING PRESERVATION RULES:
+1. EXACT STRUCTURE REPLICATION: Copy every single HTML tag, attribute, class name, ID, style, spacing, line break, and indentation EXACTLY as they appear in the original
+2. TEXT-ONLY TRANSLATION: Translate ONLY the readable text content between tags. NEVER modify any HTML elements, CSS classes, attributes, or structural markup
+3. COMPLETE FORMAT INTEGRITY: Preserve all visual formatting including headings, bullet points, numbered lists, tables, divs, spans, and any nested structures
+4. WHITESPACE PRESERVATION: Maintain all spaces, tabs, line breaks, and empty lines exactly as they appear in the original
+5. SPECIAL CHARACTERS: Keep all emojis (📋, 🎉, 🏠, etc.), symbols, punctuation marks, and special characters in their exact positions
+6. ATTRIBUTE PRESERVATION: Never translate or modify class names, IDs, href links, style attributes, or any HTML attributes
+7. PROFESSIONAL TONE: Use formal, respectful language appropriate for official school communications
+8. NUMERICAL DATA: Keep all dates, times, numbers, phone numbers, email addresses, and URLs in their original format
+9. NO EXTRA CONTENT: Do not add explanations, markdown code blocks, comments, or any additional text
+10. DIRECT OUTPUT ONLY: Return ONLY the translated content with preserved formatting - no prefixes, suffixes, or commentary
 
-EXAMPLE OF CORRECT FORMAT PRESERVATION:
-If original has: <h3 class="notice-section-title">📋 행사 일정</h3>
-Translate to: <h3 class="notice-section-title">📋 Event Schedule</h3>
+✅ CORRECT TRANSLATION EXAMPLES:
+Original: <h3 class="notice-section-title">📋 행사 상세 정보</h3>
+Correct: <h3 class="notice-section-title">📋 Event Details</h3>
 
-If original has: <div class="notice-info-item"><strong>날짜:</strong> 2025년 3월 15일</div>
-Translate to: <div class="notice-info-item"><strong>Date:</strong> March 15, 2025</div>
+Original: <div class="info-row"><span class="info-label">날짜:</span><span class="info-value">2025년 3월 15일 (금)</span></div>
+Correct: <div class="info-row"><span class="info-label">Date:</span><span class="info-value">March 15, 2025 (Friday)</span></div>
 
-If the target language is not supported or you cannot translate to ${targetLanguageName}, simply return the original Korean text unchanged.
+Original: <p class="greeting-paragraph">안녕하십니까? 학부모님께 감사의 인사를 드립니다.</p>
+Correct: <p class="greeting-paragraph">Hello. We extend our gratitude to the parents.</p>
 
-Original content:
+❌ NEVER DO THIS:
+- Change HTML structure: <div> → <p>
+- Modify class names: "notice-title" → "title"
+- Add markdown: \`\`\`html ... \`\`\`
+- Remove formatting elements
+- Change spacing or indentation
+- Add explanatory text
+
+If you cannot translate to ${targetLanguageName}, return the original Korean text with ALL formatting preserved.
+
+Original content to translate:
 ${text}
 
-Translated ${targetLanguageName} content:`;
+Translated ${targetLanguageName} content (preserve ALL formatting):`;
 
     const requestBody = {
       contents: [{

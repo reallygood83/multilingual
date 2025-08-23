@@ -17,7 +17,7 @@ const cultureData = {
     name: '필리핀',
     flag: '🇵🇭',
     holidays: [
-      { name: '신년 (New Year's Day)', month: 1, day: 1, description: '가족과 함께 새해를 맞이하며, 시끄러운 소리로 악귀를 쫓는 풍습이 있습니다.' },
+      { name: "신년 (New Year's Day)", month: 1, day: 1, description: '가족과 함께 새해를 맞이하며, 시끄러운 소리로 악귀를 쫓는 풍습이 있습니다.' },
       { name: '부활절 (Holy Week)', month: 3, day: 28, description: '필리핀에서 가장 중요한 종교적 명절 주간입니다.' },
     ]
   },

@@ -8,15 +8,15 @@ const spin = keyframes`
 
 const SpinnerContainer = styled.div`
   display: inline-block;
-  width: ${props => props.size || '20px'};
-  height: ${props => props.size || '20px'};
+  width: ${props => props.$size || '20px'};
+  height: ${props => props.$size || '20px'};
 `;
 
 const Spinner = styled.div`
   width: 100%;
   height: 100%;
   border: 2px solid #f3f3f3;
-  border-top: 2px solid ${props => props.color || '#007bff'};
+  border-top: 2px solid ${props => props.$color || '#007bff'};
   border-radius: 50%;
   animation: ${spin} 1s linear infinite;
 `;
@@ -24,14 +24,14 @@ const Spinner = styled.div`
 const LoadingText = styled.span`
   margin-left: 8px;
   font-size: 14px;
-  color: ${props => props.color || '#007bff'};
+  color: ${props => props.$color || '#007bff'};
 `;
 
 const LoadingContainer = styled.div`
   display: flex;
   align-items: center;
-  justify-content: ${props => props.center ? 'center' : 'flex-start'};
-  padding: ${props => props.padding || '0'};
+  justify-content: ${props => props.$center ? 'center' : 'flex-start'};
+  padding: ${props => props.$padding || '0'};
 `;
 
 const LoadingSpinner = ({ 
@@ -42,11 +42,11 @@ const LoadingSpinner = ({
   padding = '0' 
 }) => {
   return (
-    <LoadingContainer center={center} padding={padding}>
-      <SpinnerContainer size={size}>
-        <Spinner color={color} />
+    <LoadingContainer $center={center} $padding={padding}>
+      <SpinnerContainer $size={size}>
+        <Spinner $color={color} />
       </SpinnerContainer>
-      {text && <LoadingText color={color}>{text}</LoadingText>}
+      {text && <LoadingText $color={color}>{text}</LoadingText>}
     </LoadingContainer>
   );
 };

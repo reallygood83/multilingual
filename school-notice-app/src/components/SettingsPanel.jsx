@@ -406,46 +406,7 @@ const SettingsPanel = memo(({
           </InputGroup>
         </SettingsSection>
 
-        {/* 템플릿 업로드 */}
-        <SettingsSection style={{ gridColumn: 'span 2' }}>
-          <SectionTitle>📄 가정통신문 템플릿</SectionTitle>
-          
-          <FileUploadArea
-            className={dragOver ? 'dragover' : ''}
-            onDrop={handleDrop}
-            onDragOver={handleDragOver}
-            onDragLeave={handleDragLeave}
-            onClick={() => document.getElementById('template-upload').click()}
-          >
-            <UploadIcon>📎</UploadIcon>
-            <UploadText>학교 가정통신문 샘플 업로드</UploadText>
-            <UploadSubtext>
-              PDF 파일을 드래그 앤 드롭하거나 클릭하여 업로드하세요
-              <br />
-              (최대 10MB, PDF 형식만 지원)
-            </UploadSubtext>
-          </FileUploadArea>
 
-          <input
-            id="template-upload"
-            type="file"
-            accept=".pdf"
-            onChange={(e) => handleFileUpload(e.target.files[0])}
-            style={{ display: 'none' }}
-          />
-
-          {settings.templateFile && (
-            <div style={{ 
-              marginTop: '16px', 
-              padding: '12px', 
-              background: 'rgba(39, 174, 96, 0.1)', 
-              borderRadius: '8px',
-              color: '#27ae60'
-            }}>
-              ✅ 업로드됨: {settings.templateFile.name}
-            </div>
-          )}
-        </SettingsSection>
       </SettingsGrid>
 
       <ButtonGroup style={{ marginTop: '24px', justifyContent: 'center' }}>

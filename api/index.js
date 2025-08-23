@@ -4,11 +4,34 @@ const bodyParser = require('body-parser');
 
 const app = express();
 
-// Enhanced middleware configuration
+// Enhanced middleware configuration with robust CORS handling
+const allowedOriginsEnv = process.env.ALLOWED_ORIGINS || '';
+const defaultOrigins = ['http://localhost:3000', 'http://localhost:3003', 'http://localhost:3004', 'http://localhost:5173'];
+const allowedOrigins = process.env.NODE_ENV === 'production'
+  ? allowedOriginsEnv.split(',').map(s => s.trim()).filter(Boolean)
+  : defaultOrigins;
+
+const isOriginAllowed = (origin) => {
+  if (!origin) return true; // allow non-browser requests
+  if (allowedOrigins.includes(origin)) return true;
+  try {
+    const url = new URL(origin);
+    // Allow any localhost during development
+    if (url.protocol === 'http:' && url.hostname === 'localhost') return true;
+    // Allow any *.vercel.app subdomain in production
+    if (/\.vercel\.app$/.test(url.hostname)) return true;
+  } catch (e) {}
+  return false;
+};
+
 app.use(cors({
-  origin: process.env.NODE_ENV === 'production' 
-    ? ['https://multilingual-three.vercel.app', 'https://*.vercel.app']
-    : ['http://localhost:3000', 'http://localhost:3003', 'http://localhost:3004', 'http://localhost:5173'],
+  origin: (origin, callback) => {
+    if (isOriginAllowed(origin)) {
+      callback(null, true);
+    } else {
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
   credentials: true,
   methods: ['GET', 'POST', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization']
@@ -335,6 +358,230 @@ app.post('/api/translate-batch', async (req, res) => {
       error: 'Batch translation failed',
       message: error.message,
       code: 'BATCH_TRANSLATION_ERROR'
+    });
+  }
+});
+
+// Helper function to generate notice prompt
+function generateNoticePrompt(noticeData) {
+  const { category, title, purpose, targetAudience, keyDetails, additionalInfo } = noticeData;
+  
+  const categoryTemplates = {
+    'event': `학교 행사 안내
+
+제목: ${title}
+
+안녕하세요, ${targetAudience}.
+
+${purpose}
+
+행사 세부사항:
+${keyDetails}
+
+${additionalInfo}
+
+감사합니다.`,
+    'academic': `학사 안내
+
+제목: ${title}
+
+안녕하세요, ${targetAudience}.
+
+${purpose}
+
+세부 내용:
+${keyDetails}
+
+${additionalInfo}
+
+감사합니다.`,
+    'safety': `안전 안내
+
+제목: ${title}
+
+안녕하세요, ${targetAudience}.
+
+${purpose}
+
+안전 수칙:
+${keyDetails}
+
+${additionalInfo}
+
+감사합니다.`,
+    'health': `보건 안내
+
+제목: ${title}
+
+안녕하세요, ${targetAudience}.
+
+${purpose}
+
+건강 관련 사항:
+${keyDetails}
+
+${additionalInfo}
+
+감사합니다.`,
+    'volunteer': `자원봉사 안내
+
+제목: ${title}
+
+안녕하세요, ${targetAudience}.
+
+${purpose}
+
+참여 방법:
+${keyDetails}
+
+${additionalInfo}
+
+감사합니다.`,
+    'general': `일반 안내
+
+제목: ${title}
+
+안녕하세요, ${targetAudience}.
+
+${purpose}
+
+안내 사항:
+${keyDetails}
+
+${additionalInfo}
+
+감사합니다.`
+  };
+  
+  return categoryTemplates[category] || categoryTemplates['general'];
+}
+
+// Helper function to convert text to HTML
+function convertToHTML(text) {
+  return text
+    .replace(/\n\n/g, '</p><p>')
+    .replace(/\n/g, '<br>')
+    .replace(/^/, '<p>')
+    .replace(/$/, '</p>');
+}
+
+// Helper function to get category display name
+function getCategoryName(category) {
+  const categoryNames = {
+    'event': '행사 안내',
+    'academic': '학사 안내',
+    'safety': '안전 안내',
+    'health': '보건 안내',
+    'volunteer': '자원봉사 안내',
+    'general': '일반 안내'
+  };
+  return categoryNames[category] || '일반 안내';
+}
+
+// AI Notice Generation endpoint
+app.post('/api/generate-notice', async (req, res) => {
+  try {
+    const { category, title, purpose, targetAudience, keyDetails, additionalInfo } = req.body;
+    
+    // Input validation
+    if (!category || typeof category !== 'string') {
+      return res.status(400).json({
+        success: false,
+        error: 'category is required and must be a string',
+        code: 'INVALID_CATEGORY'
+      });
+    }
+    
+    if (!title || typeof title !== 'string') {
+      return res.status(400).json({
+        success: false,
+        error: 'title is required and must be a string',
+        code: 'INVALID_TITLE'
+      });
+    }
+    
+    if (!purpose || typeof purpose !== 'string') {
+      return res.status(400).json({
+        success: false,
+        error: 'purpose is required and must be a string',
+        code: 'INVALID_PURPOSE'
+      });
+    }
+    
+    // Validate category
+    const validCategories = ['event', 'academic', 'safety', 'health', 'volunteer', 'general'];
+    if (!validCategories.includes(category)) {
+      return res.status(400).json({
+        success: false,
+        error: `Invalid category. Must be one of: ${validCategories.join(', ')}`,
+        code: 'UNSUPPORTED_CATEGORY',
+        validCategories
+      });
+    }
+    
+    // Validate text lengths
+    if (title.length > 200) {
+      return res.status(400).json({
+        success: false,
+        error: 'Title must not exceed 200 characters',
+        code: 'TITLE_TOO_LONG'
+      });
+    }
+    
+    if (purpose.length > 1000) {
+      return res.status(400).json({
+        success: false,
+        error: 'Purpose must not exceed 1000 characters',
+        code: 'PURPOSE_TOO_LONG'
+      });
+    }
+    
+    // Generate notice using template
+    const noticeData = {
+      category,
+      title,
+      purpose,
+      targetAudience: targetAudience || '학부모님',
+      keyDetails: keyDetails || '상세 내용은 추후 안내드리겠습니다.',
+      additionalInfo: additionalInfo || '문의사항이 있으시면 언제든 연락주세요.'
+    };
+    
+    // Generate content using template
+    const generatedContent = generateNoticePrompt(noticeData);
+    
+    if (!generatedContent || generatedContent.trim().length === 0) {
+      return res.status(500).json({
+        success: false,
+        error: 'Failed to generate notice content',
+        code: 'GENERATION_FAILED'
+      });
+    }
+    
+    // Convert to HTML format
+    const htmlContent = convertToHTML(generatedContent);
+    
+    res.json({
+      success: true,
+      data: {
+        introText: title,
+        content: htmlContent,
+        category: getCategoryName(category),
+        generatedAt: new Date().toISOString()
+      },
+      metadata: {
+        originalCategory: category,
+        targetAudience: noticeData.targetAudience,
+        contentLength: generatedContent.length
+      }
+    });
+    
+  } catch (error) {
+    console.error('Notice generation error:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Internal server error during notice generation',
+      message: error.message,
+      code: 'GENERATION_ERROR'
     });
   }
 });

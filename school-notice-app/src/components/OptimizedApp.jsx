@@ -3,10 +3,14 @@ import styled from 'styled-components';
 import OptimizedButton from './OptimizedButton';
 import StatusMessage from './StatusMessage';
 import LoadingSpinner from './LoadingSpinner';
+// Remove A4 preview import
+// import A4PreviewPanel from './A4PreviewPanel';
+import TemplateAnalysisDisplay from './TemplateAnalysisDisplay';
 import { usePerformanceMonitor, useDebounce } from '../hooks/usePerformanceMonitor';
 import { translateNoticeData, checkAPIHealth } from '../services/translationService';
-import { generatePDFFromElement } from '../services/pdfService';
+import { generatePDFFromElement, generateCleanA4PDF } from '../services/pdfService';
 import { analyzePDFTemplate, translateWithGemini } from '../services/geminiService';
+import { generateNoticeWithAI } from '../services/noticeGenerationService';
 import { 
   DEFAULT_NOTICE_DATA, 
   SUPPORTED_LANGUAGES, 
@@ -20,39 +24,52 @@ const NoticeHeader = lazy(() => import('./NoticeHeader'));
 const NoticeContent = lazy(() => import('./NoticeContent'));
 const NoticeFooter = lazy(() => import('./NoticeFooter'));
 const SettingsPanel = lazy(() => import('./SettingsPanel'));
+const NoticeWizardModal = lazy(() => import('./NoticeWizardModal'));
 
 const AppContainer = styled.div`
-  max-width: 1200px;
+  max-width: 1600px;
   margin: 0 auto;
   padding: 20px;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: #ffffff;
   font-family: 'Inter', 'Pretendard', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   min-height: 100vh;
   will-change: scroll-position;
 `;
 
+const MainContent = styled.main`
+  display: flex;
+  gap: 20px;
+  align-items: flex-start;
+  margin-top: 20px;
+`;
+
+const InputSection = styled.div`
+  flex: 1;
+  max-width: 800px;
+  background: #ffffff;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  padding: 20px;
+`;
+
+
 const ControlPanel = styled.div`
   position: sticky;
   top: 0;
-  background: rgba(255, 255, 255, 0.95);
+  background: #ffffff;
   padding: 24px;
-  border-radius: 16px;
+  border-radius: 8px;
   margin-bottom: 24px;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
   z-index: 100;
-  backdrop-filter: blur(20px);
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  border: 1px solid #e0e0e0;
 `;
 
 const Title = styled.h2`
   margin: 0 0 20px 0;
-  color: var(--text-primary);
+  color: #333333;
   font-size: 28px;
   font-weight: 700;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -64,12 +81,9 @@ const APIStatus = styled.div`
   gap: 12px;
   margin-bottom: 16px;
   padding: 12px;
-  background: rgba(255,255,255,0.5);
-  border-radius: 8px;
-  border-left: 4px solid ${props => 
-    props.status === 'connected' ? '#28a745' : 
-    props.status === 'checking' ? '#ffc107' : '#dc3545'
-  };
+  background: #f8f9fa;
+  border-radius: 6px;
+  border: 1px solid #e9ecef;
 `;
 
 const StatusIndicator = styled.div`
@@ -77,10 +91,10 @@ const StatusIndicator = styled.div`
   height: 12px;
   border-radius: 50%;
   background-color: ${props => 
-    props.status === 'connected' ? '#28a745' : 
-    props.status === 'checking' ? '#ffc107' : '#dc3545'
+    props.$status === 'connected' ? '#28a745' : 
+    props.$status === 'checking' ? '#ffc107' : '#dc3545'
   };
-  animation: ${props => props.status === 'checking' ? 'pulse 1.5s infinite' : 'none'};
+  animation: ${props => props.$status === 'checking' ? 'pulse 1.5s infinite' : 'none'};
   
   @keyframes pulse {
     0%, 100% { opacity: 1; }
@@ -91,7 +105,7 @@ const StatusIndicator = styled.div`
 const ButtonGroup = styled.div`
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-  gap: 12px;
+  gap: 8px;
   margin-bottom: 16px;
   
   @media (max-width: 768px) {
@@ -99,37 +113,124 @@ const ButtonGroup = styled.div`
   }
 `;
 
-const LanguageGrid = styled.div`
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
-  gap: 8px;
+const LanguageSelector = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 12px;
   margin-top: 12px;
+  flex-wrap: wrap;
   
   @media (max-width: 768px) {
-    grid-template-columns: repeat(2, 1fr);
+    flex-direction: column;
+    align-items: stretch;
+  }
+`;
+
+const LanguageDropdown = styled.select`
+  padding: 8px 12px;
+  border: 2px solid #e9ecef;
+  border-radius: 8px;
+  background: white;
+  font-size: 14px;
+  font-weight: 500;
+  color: #495057;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  min-width: 200px;
+  
+  &:hover {
+    border-color: #3498db;
+  }
+  
+  &:focus {
+    outline: none;
+    border-color: #3498db;
+    box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1);
+  }
+  
+  @media (max-width: 768px) {
+    width: 100%;
+  }
+`;
+
+const ActionButton = styled.button`
+  padding: 12px 24px;
+  border: 1px solid #d0d7de;
+  border-radius: 6px;
+  font-weight: 500;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 44px;
+  background: #ffffff;
+  color: #24292f;
+  
+  &.primary {
+    background: #0969da;
+    color: white;
+    border-color: #0969da;
+    
+    &:hover {
+      background: #0860ca;
+      border-color: #0860ca;
+    }
+  }
+  
+  &.secondary {
+    background: #f6f8fa;
+    color: #24292f;
+    border-color: #d0d7de;
+    
+    &:hover {
+      background: #f3f4f6;
+      border-color: #d0d7de;
+    }
+  }
+  
+  &.success {
+    background: #1a7f37;
+    color: white;
+    border-color: #1a7f37;
+    
+    &:hover {
+      background: #1a7f37;
+      border-color: #1a7f37;
+    }
+  }
+  
+  &:disabled {
+    background: #f6f8fa;
+    color: #8c959f;
+    border-color: #d0d7de;
+    cursor: not-allowed;
+  }
+  
+  @media (max-width: 768px) {
+    width: 100%;
+    justify-content: center;
+  }
+`;
+
+const TranslateButton = styled(OptimizedButton)`
+  min-width: 120px;
+  
+  @media (max-width: 768px) {
+    width: 100%;
   }
 `;
 
 const NoticeContainer = styled.div`
-  background: rgba(255, 255, 255, 0.95);
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  border-radius: 16px;
+  background: #ffffff;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
   padding: 32px;
   margin: 24px 0;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
   position: relative;
   overflow: hidden;
-  backdrop-filter: blur(20px);
-  
-  &::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    height: 4px;
-    background: linear-gradient(90deg, #667eea, #764ba2, #f093fb, #f5576c);
-  }
 `;
 
 const NoticeTitle = styled.h3`
@@ -167,22 +268,42 @@ const EmptyState = styled.div`
   }
 `;
 
-const ProgressIndicator = styled.div`
+const ProgressBar = styled.div`
   width: 100%;
   height: 4px;
-  background: #e9ecef;
+  background-color: #e9ecef;
   border-radius: 2px;
   overflow: hidden;
-  margin: 12px 0;
-  
+  margin: 8px 0;
+
   &::after {
     content: '';
     display: block;
-    width: ${props => props.progress}%;
     height: 100%;
-    background: linear-gradient(90deg, #667eea, #764ba2);
+    background: linear-gradient(90deg, #007bff, #0056b3);
+    width: ${props => props.$progress || 0}%;
     transition: width 0.3s ease;
-    border-radius: 2px;
+  }
+`;
+
+const ProgressIndicator = styled.div`
+  width: 100%;
+  height: 6px;
+  background-color: #e9ecef;
+  border-radius: 3px;
+  overflow: hidden;
+  position: relative;
+
+  &::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    height: 100%;
+    background: linear-gradient(90deg, #28a745, #20c997);
+    width: ${props => props.$progress || 0}%;
+    transition: width 0.3s ease;
+    border-radius: 3px;
   }
 `;
 
@@ -192,26 +313,18 @@ const OptimizedApp = () => {
   // Core state
   const [noticeData, setNoticeData] = useState(() => ({
     ...DEFAULT_NOTICE_DATA,
-    content: `<h3>1. 선발분야 및 선발예정인원 : 초등 1명</h3>
-<h3>2. 계약기간 : 2025.03.01.~2026.02.28.(1년)</h3>
-<h3>3. 수업시수 : 20~22시간</h3>
-<h3>4. 시험일정 및 합격자 발표</h3>
-<p><strong>1) 1차시험 : 서류제출 및 심사</strong></p>
-<p>- 서류접수 : 2024년 12월 20일(금) - 12월 24일(화) 오전 11:00까지(5일간)</p>
-<p>- 합격자 발표 : 12월 24일(화) 16시 이후 개별통지</p>
-<p><strong>2) 2차시험 : 수업과정안 작성, 수업실연 및 면접</strong></p>
-<p>- 시험일시 : 12월 30일(월) 14:00~16:00</p>
-<p>- 최종 합격자 발표 : 12월 31일(화) 개별 통지</p>`
+    content: ''
   }));
 
   const [translatedNotices, setTranslatedNotices] = useState({});
   const [editing, setEditing] = useState(false);
   const [isTranslating, setIsTranslating] = useState(false);
+  const [translationProgress, setTranslationProgress] = useState(0);
+  const [selectedLanguage, setSelectedLanguage] = useState('');
   const [isGeneratingPDF, setIsGeneratingPDF] = useState(false);
   const [statusMessage, setStatusMessage] = useState(null);
   const [apiStatus, setApiStatus] = useState('checking');
   const [lastError, setLastError] = useState(null);
-  const [translationProgress, setTranslationProgress] = useState(0);
   const [showSettings, setShowSettings] = useState(false);
   const [settings, setSettings] = useState(() => {
     const saved = localStorage.getItem('schoolNoticeSettings');
@@ -228,6 +341,8 @@ const OptimizedApp = () => {
     };
   });
   const [templateAnalysis, setTemplateAnalysis] = useState(null);
+  const [showWizardModal, setShowWizardModal] = useState(false);
+  const [isGeneratingNotice, setIsGeneratingNotice] = useState(false);
 
   // Refs for PDF generation
   const noticeRef = useRef(null);
@@ -237,21 +352,6 @@ const OptimizedApp = () => {
   const languages = useMemo(() => SUPPORTED_LANGUAGES, []);
   const completedTranslations = useMemo(() => Object.keys(translatedNotices).length, [translatedNotices]);
   const debouncedNoticeData = useDebounce(noticeData, 500);
-
-  // Enhanced notice data validation and sanitization with performance monitoring
-  const handleNoticeDataChange = useCallback((newData) => {
-    return measureOperation('handleNoticeDataChange', () => {
-      const validationErrors = validateNoticeData(newData);
-      
-      if (validationErrors.length > 0) {
-        console.warn('Notice data validation errors:', validationErrors);
-        showMessage('데이터 유효성 검사 오류가 발생했습니다.', 'error');
-        return;
-      }
-      
-      setNoticeData(newData);
-    })();
-  }, [measureOperation, showMessage]);
 
   // Optimized message display with auto-clear
   const showMessage = useCallback((text, type = 'info', duration = 3000) => {
@@ -264,10 +364,40 @@ const OptimizedApp = () => {
     return () => clearTimeout(timer);
   }, []);
 
+  // Enhanced notice data validation and sanitization with performance monitoring
+  const handleNoticeDataChange = useCallback((newData) => {
+    return measureOperation('handleNoticeDataChange', () => {
+      const validationErrors = validateNoticeData(newData);
+      
+      if (validationErrors.length > 0) {
+        // During field editing, don't block updates; just log a warning to avoid interrupting UX
+        console.warn('Notice data validation warnings (non-blocking):', validationErrors);
+        // Avoid noisy toasts while typing; final actions (translate/PDF) perform strict validation elsewhere
+      }
+      
+      setNoticeData(newData);
+    })();
+  }, [measureOperation, showMessage]);
+
   // Settings handlers
   const handleSettingsChange = useCallback((newSettings) => {
     setSettings(newSettings);
   }, []);
+
+  // Auto-fill school information when settings change
+  useEffect(() => {
+    if (settings.schoolName || settings.schoolAddress || settings.schoolPhone) {
+      setNoticeData(prevData => ({
+        ...prevData,
+        school: settings.schoolName || prevData.school,
+        year: settings.schoolYear || prevData.year,
+        publisher: settings.publisher || prevData.publisher,
+        manager: settings.manager || prevData.manager,
+        phone: settings.schoolPhone || prevData.phone,
+        address: settings.schoolAddress || prevData.address
+      }));
+    }
+  }, [settings.schoolName, settings.schoolYear, settings.schoolAddress, settings.schoolPhone, settings.publisher, settings.manager, settings.managerEmail]);
 
   const handleTemplateUpload = useCallback(async (file) => {
     if (!settings.geminiApiKey) {
@@ -347,8 +477,20 @@ const OptimizedApp = () => {
       const languageName = languages.find(lang => lang.code === targetLanguage)?.name || targetLanguage;
       
       setIsTranslating(true);
+      setTranslationProgress(0);
       try {
         showMessage(`${languageName}로 번역 중입니다...`, 'info');
+        
+        // 진행률 시뮬레이션
+        const progressInterval = setInterval(() => {
+          setTranslationProgress(prev => {
+            if (prev >= 90) {
+              clearInterval(progressInterval);
+              return prev;
+            }
+            return prev + Math.random() * 15;
+          });
+        }, 200);
         
         let translatedData;
         
@@ -379,16 +521,25 @@ const OptimizedApp = () => {
           translatedData = await translateNoticeData(debouncedNoticeData, targetLanguage);
         }
         
+        clearInterval(progressInterval);
+        setTranslationProgress(100);
+        
         setTranslatedNotices(prev => ({
           ...prev,
           [targetLanguage]: translatedData
         }));
         
         showMessage(`✅ ${languageName} 번역이 완료되었습니다!`, 'success');
+        
+        // 완료 후 잠시 후 진행률 초기화
+        setTimeout(() => {
+          setTranslationProgress(0);
+        }, 2000);
       } catch (error) {
         console.error('Translation error:', error);
         const errorMessage = error.message || '번역 중 알 수 없는 오류가 발생했습니다.';
         showMessage(`❌ ${errorMessage}`, 'error', 5000);
+        setTranslationProgress(0);
       } finally {
         setIsTranslating(false);
       }
@@ -478,6 +629,51 @@ const OptimizedApp = () => {
     })();
   }, [measureOperation, showMessage, apiStatus, checkAPIStatus, languages, debouncedNoticeData, settings, templateAnalysis]);
 
+  // AI notice generation handler
+  const handleGenerateNotice = useCallback(async (formData) => {
+    // Guard: require Gemini API key
+    if (!settings?.geminiApiKey) {
+      showMessage('설정에서 Gemini API 키를 먼저 입력해주세요.', 'error');
+      setShowSettings(true);
+      throw new Error('Missing Gemini API key');
+    }
+
+    setIsGeneratingNotice(true);
+    try {
+      showMessage('AI가 통신문을 생성하고 있습니다...', 'info');
+      
+      const result = await generateNoticeWithAI(formData, settings.geminiApiKey);
+      const generatedHtml = result?.data?.content || '';
+      if (!result?.success || !generatedHtml) {
+        throw new Error(result?.error || '통신문 생성에 실패했습니다.');
+      }
+      
+      // Update notice data with generated content
+      const newNoticeData = {
+        ...noticeData,
+        content: generatedHtml
+      };
+      
+      setNoticeData(newNoticeData);
+      setShowWizardModal(false);
+      // Auto-switch to editing mode and focus the editor so the user can immediately refine the AI result
+      setEditing(true);
+      setTimeout(() => {
+        if (noticeRef.current) {
+          noticeRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
+          const editorEl = noticeRef.current.querySelector('.ql-editor');
+          if (editorEl) editorEl.focus();
+        }
+      }, 0);
+      showMessage('AI 통신문이 성공적으로 생성되었습니다!', 'success');
+    } catch (error) {
+      console.error('AI notice generation error:', error);
+      showMessage('통신문 생성 중 오류가 발생했습니다. API 키를 확인해주세요.', 'error');
+    } finally {
+      setIsGeneratingNotice(false);
+    }
+  }, [noticeData, settings?.geminiApiKey, showMessage, setEditing, setShowSettings]);
+
   // PDF generation with performance monitoring
   const handleGeneratePDF = useCallback((language = null) => {
     return measureOperation('handleGeneratePDF', async () => {
@@ -487,13 +683,13 @@ const OptimizedApp = () => {
           const element = translatedNoticeRefs.current[language];
           if (element) {
             const filename = `notice_${language}.pdf`;
-            await generatePDFFromElement(element, filename);
+            await generateCleanA4PDF(element, filename.replace('.pdf', '_clean.pdf'));
             const languageName = languages.find(lang => lang.code === language)?.name;
             showMessage(`${languageName} PDF가 생성되었습니다.`, 'success');
           }
         } else {
-          await generatePDFFromElement(noticeRef.current, 'notice_korean.pdf');
-          showMessage('한국어 PDF가 생성되었습니다.', 'success');
+          await generateCleanA4PDF(noticeRef.current, 'notice_korean_clean.pdf');
+          showMessage('깔끔한 한국어 PDF가 생성되었습니다.', 'success');
         }
       } catch (error) {
         console.error('PDF generation error:', error);
@@ -523,8 +719,8 @@ const OptimizedApp = () => {
           </OptimizedButton>
         </Title>
         
-        <APIStatus status={apiStatus}>
-          <StatusIndicator status={apiStatus} />
+        <APIStatus>
+          <StatusIndicator $status={apiStatus} />
           <div>
             <strong>API 상태:</strong> {' '}
             {apiStatus === 'connected' && '연결됨'}
@@ -534,6 +730,11 @@ const OptimizedApp = () => {
               <span style={{ marginLeft: '8px', fontSize: '12px', color: '#dc3545' }}>
                 ({lastError})
               </span>
+            )}
+            {apiStatus !== 'connected' && !settings.geminiApiKey && (
+              <div style={{ fontSize: '12px', color: '#dc3545', marginTop: '4px' }}>
+                💡 번역 기능을 사용하려면 설정에서 Gemini API 키를 입력해주세요.
+              </div>
             )}
           </div>
           {apiStatus === 'disconnected' && (
@@ -551,8 +752,16 @@ const OptimizedApp = () => {
           <StatusMessage text={statusMessage.text} type={statusMessage.type} />
         )}
         
+        <SettingsPanel
+          isOpen={showSettings}
+          onClose={() => setShowSettings(false)}
+          settings={settings}
+          onSettingsChange={setSettings}
+          onTemplateUpload={handleTemplateUpload}
+        />
+        
         {isTranslating && translationProgress > 0 && (
-          <ProgressIndicator progress={translationProgress} />
+          <ProgressIndicator $progress={translationProgress} />
         )}
         
         <ButtonGroup>
@@ -561,6 +770,16 @@ const OptimizedApp = () => {
             onClick={() => setEditing(!editing)}
           >
             {editing ? '편집 완료' : '편집 모드'}
+          </OptimizedButton>
+          
+          <OptimizedButton
+            variant="secondary"
+            onClick={() => setShowWizardModal(true)}
+            loading={isGeneratingNotice}
+            loadingText="생성 중..."
+            disabled={!settings.geminiApiKey}
+          >
+            🪄 AI 통신문 마법사
           </OptimizedButton>
           
           <OptimizedButton
@@ -589,93 +808,152 @@ const OptimizedApp = () => {
             개별 번역 ({completedTranslations}/{languages.length} 완료)
             {settings.geminiApiKey && <span style={{ color: '#28a745', marginLeft: '8px' }}>✨ Gemini AI 활성화</span>}
           </span>
-          <LanguageGrid>
-            {languages.map(language => (
-              <OptimizedButton
-                key={language.code}
-                variant={translatedNotices[language.code] ? 'success' : 'primary'}
-                onClick={() => handleTranslate(language.code)}
-                disabled={isTranslating || (apiStatus !== 'connected' && !settings.geminiApiKey)}
-                title={`${language.name}로 번역${translatedNotices[language.code] ? ' (완료)' : ''}`}
-                style={{ fontSize: '13px' }}
+          <LanguageSelector>
+            <LanguageDropdown
+            value={selectedLanguage}
+            onChange={(e) => setSelectedLanguage(e.target.value)}
+            disabled={isTranslating || (apiStatus !== 'connected' && !settings.geminiApiKey)}
+            title={
+              isTranslating 
+                ? '번역이 진행 중입니다. 잠시만 기다려주세요.' 
+                : (apiStatus !== 'connected' && !settings.geminiApiKey)
+                  ? 'API 연결이 필요합니다. 설정에서 Gemini API 키를 입력해주세요.'
+                  : '번역할 언어를 선택해주세요'
+            }
+          >
+              <option value="">번역할 언어를 선택하세요</option>
+              {languages.map(language => (
+                <option key={language.code} value={language.code}>
+                  {language.name} {translatedNotices[language.code] ? '✓' : ''}
+                </option>
+              ))}
+            </LanguageDropdown>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', flex: 1 }}>
+              <TranslateButton
+                variant={selectedLanguage && translatedNotices[selectedLanguage] ? 'success' : 'primary'}
+                onClick={() => selectedLanguage && handleTranslate(selectedLanguage)}
+                disabled={!selectedLanguage || isTranslating || (apiStatus !== 'connected' && !settings.geminiApiKey)}
+                title={
+                  !selectedLanguage 
+                    ? '먼저 번역할 언어를 선택해주세요'
+                    : isTranslating
+                      ? '번역이 진행 중입니다. 잠시만 기다려주세요.'
+                      : (apiStatus !== 'connected' && !settings.geminiApiKey)
+                        ? 'API 연결이 필요합니다. 설정에서 Gemini API 키를 입력해주세요.'
+                        : translatedNotices[selectedLanguage]
+                          ? `${languages.find(l => l.code === selectedLanguage)?.name} 번역이 완료되었습니다. 다시 번역하려면 클릭하세요.`
+                          : `${languages.find(l => l.code === selectedLanguage)?.name}로 번역을 시작합니다`
+                }
               >
-                {language.name}
-                {translatedNotices[language.code] && ' ✓'}
-              </OptimizedButton>
-            ))}
-          </LanguageGrid>
+                {isTranslating ? '번역 중...' : selectedLanguage && translatedNotices[selectedLanguage] ? '번역 완료 ✓' : '번역하기'}
+              </TranslateButton>
+              
+              {isTranslating && (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '12px', color: '#6c757d' }}>
+                    <span>번역 진행률</span>
+                    <span>{Math.round(translationProgress)}%</span>
+                  </div>
+                  <ProgressIndicator $progress={translationProgress} />
+                  <button
+                    onClick={() => {
+                      setIsTranslating(false);
+                      setTranslationProgress(0);
+                      setStatusMessage({ type: 'info', text: '번역이 취소되었습니다.' });
+                    }}
+                    style={{
+                      background: 'none',
+                      border: '1px solid #dc3545',
+                      color: '#dc3545',
+                      padding: '4px 8px',
+                      borderRadius: '4px',
+                      fontSize: '12px',
+                      cursor: 'pointer',
+                      alignSelf: 'flex-start'
+                    }}
+                  >
+                    번역 취소
+                  </button>
+                </div>
+              )}
+            </div>
+          </LanguageSelector>
         </div>
       </ControlPanel>
 
-      {/* Original Korean Notice */}
-      <NoticeContainer ref={noticeRef}>
-        <NoticeTitle>
-          📄 원본 (한국어)
-        </NoticeTitle>
-        <Suspense fallback={<LoadingSpinner center padding="40px" text="로딩 중..." />}>
-          <NoticeHeader 
-            data={noticeData} 
-            onChange={handleNoticeDataChange} 
-            editing={editing}
-          />
-          <NoticeContent 
-            data={noticeData} 
-            onChange={handleNoticeDataChange} 
-            editing={editing}
-          />
-          <NoticeFooter 
-            data={noticeData} 
-            onChange={handleNoticeDataChange} 
-            editing={editing}
-          />
-        </Suspense>
-      </NoticeContainer>
-
-      {/* Translated Notices */}
-      {Object.entries(translatedNotices).map(([languageCode, translatedData]) => {
-        const language = languages.find(lang => lang.code === languageCode);
-        return (
-          <NoticeContainer 
-            key={languageCode}
-            ref={el => translatedNoticeRefs.current[languageCode] = el}
-          >
-            <div style={{ 
-              display: 'flex', 
-              justifyContent: 'space-between', 
-              alignItems: 'center',
-              marginBottom: '24px'
-            }}>
-              <NoticeTitle style={{ margin: 0 }}>
-                🌍 {language?.name}
-              </NoticeTitle>
-              <OptimizedButton
-                variant="success"
-                onClick={() => handleGeneratePDF(languageCode)}
-                loading={isGeneratingPDF}
-                loadingText="생성 중..."
-              >
-                PDF 생성
-              </OptimizedButton>
-            </div>
-            <Suspense fallback={<LoadingSpinner center padding="20px" text="로딩 중..." />}>
-              <NoticeHeader data={translatedData} editing={false} />
-              <NoticeContent data={translatedData} editing={false} />
-              <NoticeFooter data={translatedData} editing={false} />
+      <MainContent>
+        <InputSection>
+          {/* Original Korean Notice */}
+          <NoticeContainer ref={noticeRef}>
+            <Suspense fallback={<LoadingSpinner center padding="40px" text="로딩 중..." />}>
+              <NoticeHeader 
+                data={noticeData} 
+                onChange={handleNoticeDataChange} 
+                editing={editing}
+              />
+              <NoticeContent 
+                data={noticeData} 
+                onChange={handleNoticeDataChange} 
+                editing={editing}
+              />
+              <NoticeFooter 
+                data={noticeData} 
+                onChange={handleNoticeDataChange} 
+                editing={editing}
+              />
             </Suspense>
           </NoticeContainer>
-        );
-      })}
 
-      {Object.keys(translatedNotices).length === 0 && (
-        <EmptyState>
-          <h4>🌍 AI 다국어 번역 대기 중</h4>
-          <p>AI가 번역한 가정통신문이 여기에 표시됩니다.</p>
-          <p>상단의 번역 버튼을 클릭하여 다국어 버전을 생성해보세요.</p>
-          {settings.geminiApiKey && (
-            <p style={{ color: '#28a745', fontWeight: '500' }}>✨ Gemini AI 번역 활성화됨</p>
+          {/* Translated Notices */}
+          {Object.entries(translatedNotices).map(([languageCode, translatedData]) => {
+            const language = languages.find(lang => lang.code === languageCode);
+            return (
+              <NoticeContainer 
+                key={languageCode}
+                ref={el => translatedNoticeRefs.current[languageCode] = el}
+              >
+                <div style={{ 
+                  display: 'flex', 
+                  justifyContent: 'space-between', 
+                  alignItems: 'center',
+                  marginBottom: '24px'
+                }}>
+                  <NoticeTitle style={{ margin: 0 }}>
+                    🌍 {language?.name}
+                  </NoticeTitle>
+                  <OptimizedButton
+                    variant="success"
+                    onClick={() => handleGeneratePDF(languageCode)}
+                    loading={isGeneratingPDF}
+                    loadingText="생성 중..."
+                  >
+                    PDF 생성
+                  </OptimizedButton>
+                </div>
+                <Suspense fallback={<LoadingSpinner center padding="20px" text="로딩 중..." />}>
+                  <NoticeHeader data={translatedData} editing={false} />
+                  <NoticeContent data={translatedData} editing={false} />
+                  <NoticeFooter data={translatedData} editing={false} />
+                </Suspense>
+              </NoticeContainer>
+            );
+          })}
+
+          {Object.keys(translatedNotices).length === 0 && (
+            <EmptyState>
+              <h4>🌍 AI 다국어 번역 대기 중</h4>
+              <p>AI가 번역한 통신문이 여기에 표시됩니다.</p>
+              <p>상단의 번역 버튼을 클릭하여 다국어 버전을 생성해보세요.</p>
+              {settings.geminiApiKey && (
+                <p style={{ color: '#28a745', fontWeight: '500' }}>✨ Gemini AI 번역 활성화됨</p>
+              )}
+            </EmptyState>
           )}
-        </EmptyState>
-      )}
+        </InputSection>
+        
+      </MainContent>
+
+
       
       {/* Settings Panel */}
       <Suspense fallback={<LoadingSpinner center padding="40px" text="설정 로딩 중..." />}>
@@ -687,6 +965,22 @@ const OptimizedApp = () => {
           onTemplateUpload={handleTemplateUpload}
         />
       </Suspense>
+
+      {/* Template Analysis Display */}
+      {templateAnalysis && (
+        <TemplateAnalysisDisplay analysis={templateAnalysis} />
+      )}
+
+      {/* AI Notice Wizard Modal */}
+      {showWizardModal && (
+        <Suspense fallback={<LoadingSpinner center padding="40px" text="마법사 로딩 중..." />}>
+          <NoticeWizardModal
+            isOpen={showWizardModal}
+            onClose={() => setShowWizardModal(false)}
+            onGenerate={handleGenerateNotice}
+          />
+        </Suspense>
+      )}
     </AppContainer>
   );
 };

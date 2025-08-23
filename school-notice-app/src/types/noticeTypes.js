@@ -151,7 +151,7 @@ export const DEFAULT_NOTICE_DATA = {
   address: '경기도 안양시',
   phone: '031)000-0000',
   logoUrl: '',
-  introText: '2025학년도 평촌초등학교 영어회화전문강사 선발계획 공고입니다.',
+  introText: '',
   content: '',
   attachmentDescription: '2025학년도 평촌초 영어회화전문강사 지원자000',
   attachments: [
@@ -159,7 +159,7 @@ export const DEFAULT_NOTICE_DATA = {
     '제출서류 (※ 첨부파일 참조)'
   ],
   notice: '※ 시험과목 및 배점, 응시원서, 자기소개서 등 자세한 사항은 붙임파일을 참조하시기 바랍니다.',
-  additionalInfo: '붙임 영어회화전문강사 채용공고 및 응시원서 1부. 끝.',
+  additionalInfo: '',
   date: new Date().toLocaleDateString('ko-KR', {
     year: 'numeric',
     month: '2-digit',
@@ -170,12 +170,20 @@ export const DEFAULT_NOTICE_DATA = {
 
 /**
  * Supported languages configuration
+ * Top 10 languages for multicultural students in Korea
  */
 export const SUPPORTED_LANGUAGES = [
   { code: 'en', name: '영어 (English)' },
   { code: 'zh-CN', name: '중국어 (中文)' },
   { code: 'vi', name: '베트남어 (Tiếng Việt)' },
-  { code: 'ru', name: '러시아어 (Русский)' }
+  { code: 'tl', name: '필리핀어 (Filipino)' },
+  { code: 'th', name: '태국어 (ไทย)' },
+  { code: 'mn', name: '몽골어 (Монгол)' },
+  { code: 'uz', name: '우즈베크어 (Oʻzbek)' },
+  { code: 'ru', name: '러시아어 (Русский)' },
+  { code: 'ja', name: '일본어 (日本語)' },
+  { code: 'km', name: '캄보디아어 (ខ្មែរ)' },
+  { code: 'ne', name: '네팔어 (नेपाली)' }
 ];
 
 /**

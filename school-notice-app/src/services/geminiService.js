@@ -369,13 +369,18 @@ export const translateWithGemini = async (text, targetLanguage, apiKey) => {
     const targetLanguageName = languageNames[targetLanguage] || targetLanguage;
     
     const prompt = `
-다음 한국어 텍스트를 ${targetLanguageName}로 번역해주세요. 
-학교 가정통신문의 공식적이고 정중한 톤을 유지하면서 번역해주세요.
+다음 한국어 HTML을 ${targetLanguageName}로 번역해주세요.
+중요: HTML 태그 구조와 속성(class, style, href 등)은 그대로 유지하고 텍스트 노드만 번역하세요.
+- 줄바꿈, 목록, 표, 굵게/기울임, 링크, 머리글/바닥글 등의 서식을 절대 변경하지 마세요.
+- 불필요한 텍스트를 추가하지 말고, 설명이나 코드 블록(예: \`\`\`)으로 감싸지 마세요.
+- 입력에 HTML이 포함되지 않았다면 순수 텍스트만 정중한 톤으로 번역하세요.
+- 날짜·숫자·이메일·URL 형식은 유지하세요.
+- 학교 가정통신문의 공식적이고 정중한 톤을 유지하세요.
 
-원문:
+원문 HTML:
 ${text}
 
-번역된 텍스트만 응답해주세요:`;
+반환 형식: 번역된 HTML 조각만 그대로 반환(코드 펜스나 주석 없이).`;
 
     const requestBody = {
       contents: [{
@@ -402,7 +407,23 @@ ${text}
     }
 
     const data = await response.json();
-    const translatedText = data.candidates[0].content.parts[0].text.trim();
+
+    if (!data?.candidates?.length || !data.candidates[0]?.content?.parts?.length) {
+      throw new AppError('No translation result from Gemini');
+    }
+
+    const candidate = data.candidates[0];
+    if (candidate.finishReason === 'SAFETY') {
+      throw new AppError('Translation blocked by safety filters');
+    }
+
+    let translatedText = candidate.content.parts.map(p => p.text || '').join('').trim();
+    // Strip possible fenced code blocks like ```html ... ```
+    translatedText = translatedText.replace(/^```(?:html)?\s*/i, '').replace(/```$/,'').trim();
+
+    if (!translatedText) {
+      throw new AppError('Empty translation result');
+    }
     
     return translatedText;
 

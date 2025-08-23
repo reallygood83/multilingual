@@ -8,34 +8,53 @@ import { NoticeContentPropsType, sanitizeTextInput, validateHTMLContent } from '
 const ContentContainer = styled.div`
   margin: 20px 0;
   padding: 20px;
-  border: 1px solid #ddd;
+  border: 1px solid #000;
   min-height: 400px;
+  background: #ffffff;
 `;
 
-const ContentTitle = styled.div`
-  font-size: 16px;
-  font-weight: bold;
-  margin-bottom: 20px;
-  text-align: center;
-`;
+
 
 const EditableContent = styled.div`
   .ql-editor {
     min-height: 300px;
     font-size: 14px;
     line-height: 1.6;
+    background: #ffffff;
   }
   
   .ql-toolbar {
-    border-top: 1px solid #ccc;
-    border-left: 1px solid #ccc;
-    border-right: 1px solid #ccc;
+    border: 1px solid #000;
+    background: #ffffff;
+    padding: 8px;
   }
   
   .ql-container {
-    border-bottom: 1px solid #ccc;
-    border-left: 1px solid #ccc;
-    border-right: 1px solid #ccc;
+    border: 1px solid #000;
+    border-top: none;
+    background: #ffffff;
+  }
+  
+  /* 줄간격 스타일 */
+  .ql-editor .ql-line-height-1 { line-height: 1.0; }
+  .ql-editor .ql-line-height-1-2 { line-height: 1.2; }
+  .ql-editor .ql-line-height-1-5 { line-height: 1.5; }
+  .ql-editor .ql-line-height-2 { line-height: 2.0; }
+  .ql-editor .ql-line-height-2-5 { line-height: 2.5; }
+  
+  /* 글꼴 크기 확장 */
+  .ql-editor .ql-size-small { font-size: 0.75em; }
+  .ql-editor .ql-size-large { font-size: 1.5em; }
+  .ql-editor .ql-size-huge { font-size: 2.5em; }
+  
+  /* 툴바 아이콘 개선 */
+  .ql-toolbar .ql-formats {
+    margin-right: 15px;
+  }
+  
+  .ql-toolbar button {
+    padding: 5px;
+    margin: 1px;
   }
 `;
 
@@ -67,14 +86,16 @@ const ReadOnlyContent = styled.div`
   }
   
   th, td {
-    border: 1px solid #ddd;
+    border: 1px solid #000;
     padding: 8px;
     text-align: left;
+    background: #ffffff;
   }
   
   th {
-    background-color: #f5f5f5;
+    background-color: #ffffff;
     font-weight: bold;
+    border: 1px solid #000;
   }
 `;
 
@@ -89,22 +110,32 @@ const NoticeContent = memo(({
     return sanitizeTextInput(value);
   };
   const modules = useMemo(() => ({
-    toolbar: [
-      [{ 'header': [1, 2, 3, false] }],
-      ['bold', 'italic', 'underline', 'strike'],
-      [{ 'list': 'ordered'}, { 'list': 'bullet' }],
-      [{ 'indent': '-1'}, { 'indent': '+1' }],
-      [{ 'align': [] }],
-      ['link', 'image'],
-      ['clean']
-    ],
+    toolbar: {
+      container: [
+        [{ 'header': [1, 2, 3, 4, 5, 6, false] }],
+        [{ 'font': [] }, { 'size': ['small', false, 'large', 'huge'] }],
+        ['bold', 'italic', 'underline', 'strike'],
+        [{ 'color': [] }, { 'background': [] }],
+        [{ 'list': 'ordered'}, { 'list': 'bullet' }],
+        [{ 'indent': '-1'}, { 'indent': '+1' }],
+        [{ 'align': [] }],
+        [{ 'line-height': ['1', '1.2', '1.5', '2', '2.5'] }],
+        [{ 'script': 'sub'}, { 'script': 'super' }],
+        ['blockquote', 'code-block'],
+        ['link', 'image', 'video'],
+        [{ 'direction': 'rtl' }],
+        ['clean']
+      ]
+    }
   }), []);
 
   const formats = useMemo(() => [
     'header', 'font', 'size',
     'bold', 'italic', 'underline', 'strike', 'blockquote',
     'list', 'bullet', 'indent',
-    'link', 'image', 'align'
+    'link', 'image', 'video', 'align',
+    'color', 'background', 'script',
+    'code-block', 'direction', 'line-height'
   ], []);
 
   const handleContentChange = useCallback((content) => {
@@ -117,33 +148,10 @@ const NoticeContent = memo(({
     onChange({ ...data, content: content || '' });
   }, [data, onChange]);
 
-  const handleIntroChange = useCallback((introText) => {
-    // Sanitize intro text input
-    const sanitizedIntro = validateAndSanitizeInput(introText);
-    onChange({ ...data, introText: sanitizedIntro });
-  }, [data, onChange]);
+
 
   return (
     <ContentContainer>
-      <ContentTitle>
-        {editing ? (
-          <input
-            type="text"
-            value={data.introText || '2025학년도 평촌초등학교 영어회화전문강사 선발계획 공고입니다.'}
-            onChange={(e) => handleIntroChange(e.target && e.target.value)}
-            style={{
-              width: '100%',
-              border: '1px solid #ccc',
-              padding: '8px',
-              fontSize: '16px',
-              fontWeight: 'bold',
-              textAlign: 'center'
-            }}
-          />
-        ) : (
-          data.introText || '2025학년도 평촌초등학교 영어회화전문강사 선발계획 공고입니다.'
-        )}
-      </ContentTitle>
 
       {editing ? (
         <EditableContent>
@@ -153,13 +161,13 @@ const NoticeContent = memo(({
             onChange={handleContentChange}
             modules={modules}
             formats={formats}
-            placeholder="가정통신문 내용을 작성해주세요..."
+            placeholder="통신문 내용을 입력하세요. 예: 학교 행사 안내, 공지사항, 가정통신문 등"
           />
         </EditableContent>
       ) : (
         <ReadOnlyContent
           dangerouslySetInnerHTML={{ 
-            __html: data.content || '<p>내용이 없습니다.</p>' 
+            __html: data.content || '<p>통신문 내용을 작성하려면 편집 모드를 활성화해주세요.</p>' 
           }}
         />
       )}
@@ -169,11 +177,6 @@ const NoticeContent = memo(({
 
 // PropTypes validation
 NoticeContent.propTypes = NoticeContentPropsType;
-
-// Default props
-NoticeContent.defaultProps = {
-  editing: false
-};
 
 // Display name for debugging
 NoticeContent.displayName = 'NoticeContent';

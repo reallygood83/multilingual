@@ -5,6 +5,7 @@
       "src": "school-notice-app/package.json",
       "use": "@vercel/static-build",
       "config": {
+        "installCommand": "npm ci",
         "buildCommand": "npm run build",
         "distDir": "dist"
       }

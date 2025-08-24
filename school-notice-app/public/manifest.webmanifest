@@ -1,0 +1,66 @@
+{
+  "name": "Glocal Edu - 다문화교실 지원 플랫폼",
+  "short_name": "Glocal Edu",
+  "description": "AI를 활용한 다문화교육 지원 플랫폼. 다국어 가정통신문 생성, 세계 문화 캘린더, 다문화 교육 자료를 제공합니다.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#f8f9fa",
+  "theme_color": "#0969da",
+  "orientation": "portrait-primary",
+  "categories": ["education", "productivity", "utilities"],
+  "lang": "ko-KR",
+  "icons": [
+    {
+      "src": "/icons/icon-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "maskable any"
+    },
+    {
+      "src": "/icons/icon-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable any"
+    }
+  ],
+  "screenshots": [
+    {
+      "src": "/screenshots/mobile-home.png",
+      "sizes": "390x844",
+      "type": "image/png",
+      "platform": "narrow",
+      "label": "다문화 통신문 메인 화면 (모바일)"
+    },
+    {
+      "src": "/screenshots/desktop-home.png",
+      "sizes": "1280x720",
+      "type": "image/png",
+      "platform": "wide",
+      "label": "다문화 통신문 메인 화면 (데스크톱)"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "AI 다국어 가정통신문",
+      "short_name": "가정통신문",
+      "description": "AI로 다국어 가정통신문을 생성합니다",
+      "url": "/?program=notice_generator",
+      "icons": [{ "src": "/icons/shortcut-generate.png", "sizes": "96x96" }]
+    },
+    {
+      "name": "세계 문화 캘린더",
+      "short_name": "문화캘린더",
+      "description": "전 세계 문화 행사와 기념일을 확인합니다",
+      "url": "/?program=culture_calendar",
+      "icons": [{ "src": "/icons/shortcut-calendar.png", "sizes": "96x96" }]
+    },
+    {
+      "name": "다문화 캘린더",
+      "short_name": "다문화캘린더",
+      "description": "다양한 국가의 문화와 전통을 학습합니다",
+      "url": "/?program=world_culture_calendar",
+      "icons": [{ "src": "/icons/shortcut-world.png", "sizes": "96x96" }]
+    }
+  ],
+  "prefer_related_applications": false
+}

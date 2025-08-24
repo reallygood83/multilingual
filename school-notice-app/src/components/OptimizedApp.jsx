@@ -162,20 +162,31 @@ const MobileNavToggle = styled.button`
 const OptimizedApp = () => {
   const [activeView, setActiveView] = useState('notice_generator');
   const [mobileNavCollapsed, setMobileNavCollapsed] = useState(true);
+  const [generatedNotice, setGeneratedNotice] = useState(null);
   
   const [settings] = useState(() => {
     const saved = localStorage.getItem('schoolNoticeSettings');
     return saved ? JSON.parse(saved) : { geminiApiKey: '' };
   });
 
+  const handleNoticeGenerated = (noticeContent) => {
+    setGeneratedNotice(noticeContent);
+    setActiveView('notice_generator');
+  };
+
   const renderView = () => {
     switch (activeView) {
       case 'notice_generator':
-        return <NoticeGenerator />;
+        return <NoticeGenerator initialContent={generatedNotice} />;
       case 'culture_calendar':
         return <CultureCalendar apiKey={settings.geminiApiKey} />;
       case 'world_culture_calendar':
-        return <WorldCultureCalendar />;
+        return (
+          <WorldCultureCalendar 
+            apiKey={settings.geminiApiKey}
+            onNoticeGenerated={handleNoticeGenerated}
+          />
+        );
       default:
         return <div>선택된 메뉴가 없습니다.</div>;
     }

@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect, useCallback, useMemo, lazy, Suspense } from 'react';
 import styled from 'styled-components';
+import PropTypes from 'prop-types';
 import OptimizedButton from './OptimizedButton';
 import StatusMessage from './StatusMessage';
 import LoadingSpinner from './LoadingSpinner';
@@ -239,11 +240,14 @@ const Footer = styled.footer`
   }
 `;
 
-const NoticeGenerator = () => {
+const NoticeGenerator = ({ initialContent }) => {
   const { measureOperation } = usePerformanceMonitor('NoticeGenerator');
   
   // Core state
-  const [noticeData, setNoticeData] = useState(() => ({ ...DEFAULT_NOTICE_DATA, content: '' }));
+  const [noticeData, setNoticeData] = useState(() => ({
+    ...DEFAULT_NOTICE_DATA,
+    content: initialContent || ''
+  }));
   const [translatedNotices, setTranslatedNotices] = useState({});
   const [editing, setEditing] = useState(false);
   const [isTranslating, setIsTranslating] = useState(false);
@@ -277,6 +281,19 @@ const NoticeGenerator = () => {
   const completedTranslations = useMemo(() => Object.keys(translatedNotices).length, [translatedNotices]);
   const debouncedNoticeData = useDebounce(noticeData, 500);
   const debouncedSettings = useDebounce(settings, 500);
+
+  // Handle initial content from culture calendar
+  useEffect(() => {
+    if (initialContent && initialContent !== noticeData.content) {
+      setNoticeData(prev => ({
+        ...prev,
+        content: initialContent,
+        title: initialContent.includes('🌍 세계 문화 체험') 
+          ? initialContent.match(/<h[1-6][^>]*>([^<]+)</)?.[1] || prev.title
+          : prev.title
+      }));
+    }
+  }, [initialContent, noticeData.content]);
 
   useEffect(() => {
     try {
@@ -980,6 +997,10 @@ const NoticeGenerator = () => {
       </Footer>
     </AppContainer>
   );
+};
+
+NoticeGenerator.propTypes = {
+  initialContent: PropTypes.string
 };
 
 export default NoticeGenerator;

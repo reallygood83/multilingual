@@ -753,6 +753,138 @@ ${text}
 
 
 /**
+ * Gets detailed cultural event information for educational purposes
+ * @param {Object} event - The cultural event object
+ * @param {string} apiKey - Gemini API key
+ * @returns {Promise<Object>} - Detailed cultural and educational information
+ */
+export const getCulturalEventDetails = async (event, apiKey) => {
+  if (!event || !event.event) throw new ValidationError('Cultural event data is required');
+  if (!validateApiKey(apiKey)) throw new ValidationError('Invalid API key');
+
+  const countries = event.countries.map(countryKey => {
+    // COUNTRIES 객체에서 실제 국가 정보 가져오기 (임시로 기본값 사용)
+    return { name: countryKey, flag: '🏳️' };
+  });
+
+  const prompt = `
+당신은 한국의 다문화 교육 전문가입니다. 다음 세계 문화 행사에 대해 교육적 관점에서 상세한 정보를 제공해주세요.
+
+행사 정보:
+- 행사명: ${event.event}
+- 날짜: ${event.date}
+- 유형: ${event.type}
+- 관련 국가: ${countries.map(c => c.name).join(', ')}
+- 기본 설명: ${event.description}
+
+다음 JSON 형식으로 응답해주세요:
+
+{
+  "culturalBackground": "<p>문화적 배경과 역사적 의미를 3-4문단으로 상세히 설명. HTML 형식으로 작성하여 <strong>, <em>, <p> 태그 활용</p>",
+  "classroomActivities": [
+    {
+      "grade": "초등 저학년(1-2학년)",
+      "subject": "통합교과",
+      "activity": "구체적이고 실행 가능한 활동 설명"
+    },
+    {
+      "grade": "초등 중학년(3-4학년)",
+      "subject": "사회/도덕", 
+      "activity": "구체적이고 실행 가능한 활동 설명"
+    },
+    {
+      "grade": "초등 고학년(5-6학년)",
+      "subject": "사회/창체",
+      "activity": "구체적이고 실행 가능한 활동 설명"
+    }
+  ],
+  "educationalPoints": "<p>다문화 교육 관점에서 이 행사를 통해 학생들이 배울 수 있는 가치와 태도를 설명. 문화적 다양성, 상호 존중, 세계 시민 의식 등을 포함. HTML 형식으로 작성</p>",
+  "languagePhrases": [
+    {
+      "original": "해당 문화권의 인사말이나 축하 표현",
+      "pronunciation": "발음 표기 (있는 경우)",
+      "meaning": "한국어 의미"
+    }
+  ]
+}`;
+
+  try {
+    const response = await fetch(`${GEMINI_API_BASE_URL}/models/${DEFAULT_MODEL}:generateContent?key=${apiKey}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        contents: [{ parts: [{ text: prompt }] }],
+        generationConfig: { temperature: 0.3, maxOutputTokens: 2048, response_mime_type: "application/json" }
+      })
+    });
+
+    if (!response.ok) throw new NetworkError(`Failed to get cultural event details: ${response.status}`);
+    const data = await response.json();
+    const jsonText = data.candidates?.[0]?.content?.parts?.[0]?.text.trim();
+    if (!jsonText) throw new AppError('No cultural event details from Gemini');
+    return JSON.parse(jsonText);
+  } catch (error) {
+    console.error('Failed to get cultural event details:', error);
+    throw error;
+  }
+};
+
+/**
+ * Generates a family notice based on cultural event details
+ * @param {Object} event - The cultural event object
+ * @param {Object} eventDetails - Detailed cultural information
+ * @param {string} apiKey - Gemini API key
+ * @returns {Promise<string>} - Generated HTML notice content
+ */
+export const generateNoticeFromCulturalEvent = async (event, eventDetails, apiKey) => {
+  if (!event || !eventDetails) throw new ValidationError('Event and event details are required');
+  if (!validateApiKey(apiKey)) throw new ValidationError('Invalid API key');
+
+  const prompt = `
+당신은 한국 초등학교 교사입니다. 다음 세계 문화 행사를 소개하고 가정에서도 함께 참여할 수 있도록 안내하는 가정통신문을 작성해주세요.
+
+행사 정보:
+${JSON.stringify(event, null, 2)}
+
+상세 문화 정보:
+${JSON.stringify(eventDetails, null, 2)}
+
+가정통신문 요구사항:
+1. 제목: "🌍 세계 문화 체험 - [행사명] 안내"
+2. 행사 소개와 의미 설명 (학부모가 이해하기 쉽게)
+3. 학교에서 진행할 활동 안내
+4. 가정에서 함께 할 수 있는 활동 제안
+5. 다문화 이해 교육의 중요성 강조
+6. 정중하고 친근한 어투 사용
+7. HTML 형식으로 작성하되 완전한 문서 형태
+
+HTML 가정통신문을 작성해주세요:`;
+
+  try {
+    const response = await fetch(`${GEMINI_API_BASE_URL}/models/${DEFAULT_MODEL}:generateContent?key=${apiKey}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        contents: [{ parts: [{ text: prompt }] }],
+        generationConfig: { temperature: 0.4, maxOutputTokens: 2048 }
+      })
+    });
+
+    if (!response.ok) throw new NetworkError(`Failed to generate cultural notice: ${response.status}`);
+    const data = await response.json();
+    const htmlContent = data.candidates?.[0]?.content?.parts?.[0]?.text.trim();
+    if (!htmlContent) throw new AppError('No notice content from Gemini');
+    
+    // HTML 태그 제거 후 깨끗한 HTML만 반환
+    let cleanContent = htmlContent.replace(/^```html\s*/i, '').replace(/```$/,'').trim();
+    return cleanContent;
+  } catch (error) {
+    console.error('Failed to generate cultural notice:', error);
+    throw error;
+  }
+};
+
+/**
  * Gets classroom activity ideas for a specific holiday.
  * @param {string} holidayName - The name of the holiday.
  * @param {string} countryName - The name of the country.
@@ -811,5 +943,7 @@ export default {
   refineToEasyKorean,
   addCulturalNotes,
   extractKeyInfo,
-  getHolidayActivityIdeas
+  getHolidayActivityIdeas,
+  getCulturalEventDetails,
+  generateNoticeFromCulturalEvent
 };

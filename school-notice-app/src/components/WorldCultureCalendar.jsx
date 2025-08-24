@@ -1,6 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import styled from 'styled-components';
 import PropTypes from 'prop-types';
+import CultureEventModal from './CultureEventModal';
 import { 
   COUNTRIES, 
   MONTHLY_CULTURE_CALENDAR, 
@@ -118,6 +119,7 @@ const EventCard = styled.div`
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
   position: relative;
   overflow: hidden;
+  cursor: pointer;
 
   &:hover {
     transform: translateY(-4px);
@@ -317,10 +319,12 @@ const generateTeacherTips = (event) => {
   };
 };
 
-const WorldCultureCalendar = ({ showTodaysBanner = true }) => {
+const WorldCultureCalendar = ({ showTodaysBanner = true, apiKey, onNoticeGenerated }) => {
   const [selectedMonth, setSelectedMonth] = useState('all');
   const [selectedCountry, setSelectedCountry] = useState('all');
   const [searchTerm, setSearchTerm] = useState('');
+  const [selectedEvent, setSelectedEvent] = useState(null);
+  const [modalOpen, setModalOpen] = useState(false);
 
   // 오늘의 세계 문화 정보
   const todaysCulture = useMemo(() => getTodaysCulture(), []);
@@ -447,7 +451,14 @@ const WorldCultureCalendar = ({ showTodaysBanner = true }) => {
       <EventsGrid>
         {filteredEvents.length > 0 ? (
           filteredEvents.map((event, index) => (
-            <EventCard key={`${event.event}-${index}`} type={event.type}>
+            <EventCard 
+              key={`${event.event}-${index}`} 
+              type={event.type}
+              onClick={() => {
+                setSelectedEvent(event);
+                setModalOpen(true);
+              }}
+            >
               <EventHeader>
                 <EventTitle>{event.event}</EventTitle>
                 <EventDate>{event.date}</EventDate>
@@ -482,6 +493,21 @@ const WorldCultureCalendar = ({ showTodaysBanner = true }) => {
                   <strong>📝 평가 방법:</strong> {generateTeacherTips(event).assessment}
                 </div>
               </TeacherTips>
+              
+              {/* 클릭 안내 */}
+              <div style={{
+                position: 'absolute',
+                bottom: '12px',
+                right: '16px',
+                background: 'rgba(102, 126, 234, 0.1)',
+                color: '#667eea',
+                fontSize: '12px',
+                padding: '4px 8px',
+                borderRadius: '12px',
+                fontWeight: '500'
+              }}>
+                📖 자세히 보기
+              </div>
             </EventCard>
           ))
         ) : (
@@ -491,12 +517,26 @@ const WorldCultureCalendar = ({ showTodaysBanner = true }) => {
           </EmptyState>
         )}
       </EventsGrid>
+      
+      {/* 문화 행사 상세 모달 */}
+      <CultureEventModal
+        event={selectedEvent}
+        isOpen={modalOpen}
+        onClose={() => {
+          setModalOpen(false);
+          setSelectedEvent(null);
+        }}
+        apiKey={apiKey}
+        onNoticeGenerated={onNoticeGenerated}
+      />
     </CalendarContainer>
   );
 };
 
 WorldCultureCalendar.propTypes = {
-  showTodaysBanner: PropTypes.bool
+  showTodaysBanner: PropTypes.bool,
+  apiKey: PropTypes.string,
+  onNoticeGenerated: PropTypes.func
 };
 
 export default WorldCultureCalendar;

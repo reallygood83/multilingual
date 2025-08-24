@@ -279,10 +279,11 @@ const Footer = styled.footer`
   margin-top: 60px;
   padding-top: 40px;
   border-top: 1px solid rgba(255, 255, 255, 0.2);
-  color: rgba(255, 255, 255, 0.8);
+  color: rgba(255, 255, 255, 1);
   
   p {
     margin: 0 0 10px 0;
+    color: rgba(255, 255, 255, 1);
   }
   
   a {

@@ -1,6 +1,36 @@
 import { translateWithGemini } from './geminiService';
 
 /**
+ * 날짜를 한국어 형식으로 변환하는 함수
+ * @param {Date|string} date - 변환할 날짜
+ * @returns {string} 한국어 형식 날짜 문자열 (예: "2025년 10월 1일(수)")
+ */
+function formatKoreanDate(date) {
+  if (!date) return '';
+  
+  const dateObj = date instanceof Date ? date : new Date(date);
+  if (isNaN(dateObj.getTime())) return '';
+  
+  const year = dateObj.getFullYear();
+  const month = dateObj.getMonth() + 1;
+  const day = dateObj.getDate();
+  const dayNames = ['일', '월', '화', '수', '목', '금', '토'];
+  const dayName = dayNames[dateObj.getDay()];
+  
+  return `${year}년 ${month}월 ${day}일(${dayName})`;
+}
+
+/**
+ * 배열 값을 문자열로 변환하는 함수
+ * @param {Array} array - 변환할 배열
+ * @returns {string} 쉼표로 구분된 문자열
+ */
+function formatArrayValue(array) {
+  if (!Array.isArray(array)) return '';
+  return array.filter(item => item && item.trim()).join(', ');
+}
+
+/**
  * 전문적인 AI 통신문 마법사 서비스 - 고도화 버전
  * 『AI 기반 학교-가정 소통: 대한민국 가정통신문 생성을 위한 프레임워크』 연구 반영
  * 구조적 진정성, 문화적 관례, 법적 안전성을 보장하는 통신문 생성

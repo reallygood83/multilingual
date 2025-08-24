@@ -163,31 +163,23 @@ export const translateBatch = async (texts, targetLanguage, sourceLanguage = 'ko
   }, `Batch Translation (${targetLanguage}, ${texts.length} texts)`);
 };
 
-// Enhanced HTML text extraction with safety checks
+// Enhanced HTML text extraction with formatting preservation for translation
 export const extractTextFromHTML = (html) => {
   try {
     if (!html || typeof html !== 'string') {
       return '';
     }
     
-    // Create a temporary div in memory
-    const tempDiv = document.createElement('div');
-    tempDiv.innerHTML = html;
-    
-    // Extract text content and clean up
-    const textContent = tempDiv.textContent || tempDiv.innerText || '';
-    
-    // Clean up the temporary element
-    tempDiv.remove();
-    
-    return textContent.trim();
+    // For translation purposes, preserve HTML structure instead of stripping it
+    // This allows the AI to maintain formatting during translation
+    return html;
   } catch (error) {
-    console.error('Error extracting text from HTML:', error);
+    console.error('Error processing HTML:', error);
     return html; // Return original HTML as fallback
   }
 };
 
-// Enhanced HTML text replacement with better handling
+// Enhanced HTML text replacement - now supports direct HTML translation
 export const replaceTextInHTML = (html, originalTexts, translatedTexts) => {
   try {
     if (!html || typeof html !== 'string') {
@@ -198,27 +190,16 @@ export const replaceTextInHTML = (html, originalTexts, translatedTexts) => {
       return html;
     }
     
-    let result = html;
+    // Since we're now passing HTML directly to the AI translator,
+    // the translated text should already be properly formatted HTML
+    // So we can return the translated text directly if it exists
+    if (translatedTexts.length > 0 && translatedTexts[0]) {
+      return translatedTexts[0];
+    }
     
-    originalTexts.forEach((originalText, index) => {
-      if (originalText && 
-          typeof originalText === 'string' && 
-          originalText.trim() && 
-          translatedTexts[index] &&
-          typeof translatedTexts[index] === 'string') {
-        
-        // Escape special regex characters in the original text
-        const escapedOriginal = originalText.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-        
-        // Use global replacement with word boundaries where appropriate
-        const regex = new RegExp(escapedOriginal, 'g');
-        result = result.replace(regex, translatedTexts[index]);
-      }
-    });
-    
-    return result;
+    return html;
   } catch (error) {
-    console.error('Error replacing text in HTML:', error);
+    console.error('Error processing translated HTML:', error);
     return html; // Return original HTML as fallback
   }
 };
@@ -254,7 +235,7 @@ export const translateNoticeData = async (noticeData, targetLanguage) => {
       noticeData.manager || '',
       noticeData.address || '',
       noticeData.introText || '',
-      extractTextFromHTML(noticeData.content || ''),
+      noticeData.content || '',
       noticeData.attachmentDescription || '',
       ...(Array.isArray(noticeData.attachments) ? noticeData.attachments : []),
       noticeData.notice || '',
@@ -300,11 +281,7 @@ export const translateNoticeData = async (noticeData, targetLanguage) => {
       manager: fullTranslatedTexts[3] || noticeData.manager,
       address: fullTranslatedTexts[4] || noticeData.address,
       introText: fullTranslatedTexts[5] || noticeData.introText,
-      content: replaceTextInHTML(
-        noticeData.content || '',
-        [extractTextFromHTML(noticeData.content || '')],
-        [fullTranslatedTexts[6]]
-      ),
+      content: fullTranslatedTexts[6] || noticeData.content,
       attachmentDescription: fullTranslatedTexts[7] || noticeData.attachmentDescription,
       attachments: Array.isArray(noticeData.attachments) 
         ? noticeData.attachments.map((_, index) => 

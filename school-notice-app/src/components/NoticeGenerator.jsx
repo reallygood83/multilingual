@@ -497,6 +497,201 @@ const NoticeGenerator = () => {
     }
   }, [languages]);
 
+  // 번역된 텍스트 전체 복사 기능
+  const handleCopyTranslatedText = useCallback(async (languageCode) => {
+    try {
+      const translatedData = translatedNotices[languageCode];
+      const language = languages.find(lang => lang.code === languageCode);
+      
+      if (!translatedData) {
+        showMessage('복사할 번역 데이터가 없습니다.', 'error');
+        return;
+      }
+
+      // HTML에서 텍스트만 추출하고 형식 보존
+      const extractTextWithFormatting = (html) => {
+        if (!html) return '';
+        
+        // HTML을 텍스트로 변환하되 줄바꿈과 문단 구분 보존
+        const tempDiv = document.createElement('div');
+        tempDiv.innerHTML = html;
+        
+        // <br> 태그를 줄바꿈으로 변환
+        tempDiv.querySelectorAll('br').forEach(br => br.replaceWith('\n'));
+        
+        // <p> 태그를 문단 구분으로 변환
+        tempDiv.querySelectorAll('p').forEach(p => {
+          p.replaceWith(p.textContent + '\n\n');
+        });
+        
+        // <div> 태그도 줄바꿈으로 처리
+        tempDiv.querySelectorAll('div').forEach(div => {
+          div.replaceWith(div.textContent + '\n');
+        });
+        
+        // 리스트 항목들을 번호나 불릿으로 변환
+        tempDiv.querySelectorAll('li').forEach((li, index) => {
+          const parent = li.closest('ol, ul');
+          const prefix = parent?.tagName === 'OL' ? `${index + 1}. ` : '• ';
+          li.replaceWith(prefix + li.textContent + '\n');
+        });
+        
+        return tempDiv.textContent || tempDiv.innerText || '';
+      };
+
+      // 전체 통신문 텍스트 구성 (형식 보존)
+      const fullText = [
+        translatedData.school || '',
+        translatedData.year || '',
+        '',
+        translatedData.title || '',
+        '',
+        translatedData.introText || '',
+        '',
+        extractTextWithFormatting(translatedData.content || ''),
+        '',
+        translatedData.publisher || '',
+        translatedData.manager || '',
+        translatedData.phone || '',
+        translatedData.address || ''
+      ].filter(text => text.trim()).join('\n');
+
+      // 클립보드에 복사
+      await navigator.clipboard.writeText(fullText);
+      showMessage(`✅ ${language?.name} 번역문이 클립보드에 복사되었습니다!`, 'success');
+      
+    } catch (error) {
+      console.error('텍스트 복사 실패:', error);
+      
+      // 클립보드 API가 지원되지 않을 경우 fallback
+      try {
+        const translatedData = translatedNotices[languageCode];
+        const textArea = document.createElement('textarea');
+        const fullText = [
+          translatedData.school || '',
+          translatedData.year || '',
+          '',
+          translatedData.title || '',
+          '',
+          translatedData.introText || '',
+          '',
+          translatedData.content?.replace(/<[^>]*>/g, '').replace(/\s+/g, ' ').trim() || '',
+          '',
+          translatedData.publisher || '',
+          translatedData.manager || '',
+          translatedData.phone || '',
+          translatedData.address || ''
+        ].filter(text => text.trim()).join('\n');
+        
+        textArea.value = fullText;
+        document.body.appendChild(textArea);
+        textArea.select();
+        document.execCommand('copy');
+        document.body.removeChild(textArea);
+        
+        const language = languages.find(lang => lang.code === languageCode);
+        showMessage(`✅ ${language?.name} 번역문이 복사되었습니다!`, 'success');
+      } catch (fallbackError) {
+        showMessage('텍스트 복사에 실패했습니다. 브라우저가 복사 기능을 지원하지 않습니다.', 'error');
+      }
+    }
+  }, [translatedNotices, languages, showMessage]);
+
+  // 한국어 원문 전체 복사 기능
+  const handleCopyKoreanText = useCallback(async () => {
+    try {
+      if (!noticeData.content && !noticeData.title) {
+        showMessage('복사할 한국어 내용이 없습니다.', 'error');
+        return;
+      }
+
+      // HTML에서 텍스트만 추출하고 형식 보존
+      const extractTextWithFormatting = (html) => {
+        if (!html) return '';
+        
+        // HTML을 텍스트로 변환하되 줄바꿈과 문단 구분 보존
+        const tempDiv = document.createElement('div');
+        tempDiv.innerHTML = html;
+        
+        // <br> 태그를 줄바꿈으로 변환
+        tempDiv.querySelectorAll('br').forEach(br => br.replaceWith('\n'));
+        
+        // <p> 태그를 문단 구분으로 변환
+        tempDiv.querySelectorAll('p').forEach(p => {
+          p.replaceWith(p.textContent + '\n\n');
+        });
+        
+        // <div> 태그도 줄바꿈으로 처리
+        tempDiv.querySelectorAll('div').forEach(div => {
+          div.replaceWith(div.textContent + '\n');
+        });
+        
+        // 리스트 항목들을 번호나 불릿으로 변환
+        tempDiv.querySelectorAll('li').forEach((li, index) => {
+          const parent = li.closest('ol, ul');
+          const prefix = parent?.tagName === 'OL' ? `${index + 1}. ` : '• ';
+          li.replaceWith(prefix + li.textContent + '\n');
+        });
+        
+        return tempDiv.textContent || tempDiv.innerText || '';
+      };
+
+      // 전체 한국어 통신문 텍스트 구성 (형식 보존)
+      const fullText = [
+        noticeData.school || '',
+        noticeData.year || '',
+        '',
+        noticeData.title || '',
+        '',
+        noticeData.introText || '',
+        '',
+        extractTextWithFormatting(noticeData.content || ''),
+        '',
+        noticeData.publisher || '',
+        noticeData.manager || '',
+        noticeData.phone || '',
+        noticeData.address || ''
+      ].filter(text => text.trim()).join('\n');
+
+      // 클립보드에 복사
+      await navigator.clipboard.writeText(fullText);
+      showMessage('✅ 한국어 원문이 클립보드에 복사되었습니다!', 'success');
+      
+    } catch (error) {
+      console.error('한국어 텍스트 복사 실패:', error);
+      
+      // 클립보드 API가 지원되지 않을 경우 fallback
+      try {
+        const textArea = document.createElement('textarea');
+        const fullText = [
+          noticeData.school || '',
+          noticeData.year || '',
+          '',
+          noticeData.title || '',
+          '',
+          noticeData.introText || '',
+          '',
+          noticeData.content?.replace(/<[^>]*>/g, '').replace(/\s+/g, ' ').trim() || '',
+          '',
+          noticeData.publisher || '',
+          noticeData.manager || '',
+          noticeData.phone || '',
+          noticeData.address || ''
+        ].filter(text => text.trim()).join('\n');
+        
+        textArea.value = fullText;
+        document.body.appendChild(textArea);
+        textArea.select();
+        document.execCommand('copy');
+        document.body.removeChild(textArea);
+        
+        showMessage('✅ 한국어 원문이 복사되었습니다!', 'success');
+      } catch (fallbackError) {
+        showMessage('텍스트 복사에 실패했습니다. 브라우저가 복사 기능을 지원하지 않습니다.', 'error');
+      }
+    }
+  }, [noticeData, showMessage]);
+
   useEffect(() => { checkAPIStatus(); }, [checkAPIStatus]);
 
   return (
@@ -526,6 +721,7 @@ const NoticeGenerator = () => {
           <OptimizedButton variant="primary" onClick={() => setEditing(!editing)}>{editing ? '편집 완료' : '편집 모드'}</OptimizedButton>
           <OptimizedButton variant="secondary" onClick={() => setShowWizardModal(true)} loading={isGeneratingNotice} loadingText="생성 중..." disabled={!settings.geminiApiKey}>🪄 AI 다문화 통신문 생성 마법사</OptimizedButton>
           <OptimizedButton variant="secondary" onClick={handleTranslateAll} disabled={isTranslating || !settings.geminiApiKey} loading={isTranslating} loadingText="번역 중..." title={!settings.geminiApiKey ? 'Gemini API 키가 필요합니다' : `모든 언어로 일괄 번역 (${languages.length}개)`}>모든 언어로 번역 ({languages.length}개)</OptimizedButton>
+          <OptimizedButton variant="outline" onClick={() => handleCopyKoreanText()} title="한국어 원문 전체 복사">📋 한국어 복사</OptimizedButton>
           <OptimizedButton variant="success" onClick={() => handleGeneratePDF()} loading={isGeneratingPDF} loadingText="생성 중...">한국어 PDF</OptimizedButton>
         </ButtonGroup>
 
@@ -573,7 +769,16 @@ const NoticeGenerator = () => {
               <NoticeContainer key={languageCode} ref={el => translatedNoticeRefs.current[languageCode] = el}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
                   <NoticeTitle style={{ margin: 0 }}>🌍 {language?.name}</NoticeTitle>
-                  <OptimizedButton variant="success" onClick={() => handleGeneratePDF(languageCode)} loading={isGeneratingPDF} loadingText="생성 중...">PDF 생성</OptimizedButton>
+                  <div style={{ display: 'flex', gap: '8px' }}>
+                    <OptimizedButton 
+                      variant="outline" 
+                      onClick={() => handleCopyTranslatedText(languageCode)}
+                      title="번역된 통신문 전체 복사"
+                    >
+                      📋 전체 복사
+                    </OptimizedButton>
+                    <OptimizedButton variant="success" onClick={() => handleGeneratePDF(languageCode)} loading={isGeneratingPDF} loadingText="생성 중...">PDF 생성</OptimizedButton>
+                  </div>
                 </div>
                 <Suspense fallback={<LoadingSpinner center padding="20px" text="로딩 중..." />}>
                   <NoticeHeader data={translatedData} editing={false} />

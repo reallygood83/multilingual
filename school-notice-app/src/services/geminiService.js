@@ -440,44 +440,31 @@ export const translateWithGemini = async (text, targetLanguage, apiKey) => {
 
     const targetLanguageName = languageNames[targetLanguage] || targetLanguage;
     
-    const prompt = `You are a professional translator. Translate the following Korean text/HTML to ${targetLanguageName}.
+    const prompt = `You are a professional school notice translator for Korean multicultural families. 
 
-🚨 ABSOLUTE FORMATTING PRESERVATION RULES:
-1. EXACT STRUCTURE REPLICATION: Copy every single HTML tag, attribute, class name, ID, style, spacing, line break, and indentation EXACTLY as they appear in the original
-2. TEXT-ONLY TRANSLATION: Translate ONLY the readable text content between tags. NEVER modify any HTML elements, CSS classes, attributes, or structural markup
-3. COMPLETE FORMAT INTEGRITY: Preserve all visual formatting including headings, bullet points, numbered lists, tables, divs, spans, and any nested structures
-4. WHITESPACE PRESERVATION: Maintain all spaces, tabs, line breaks, and empty lines exactly as they appear in the original
-5. SPECIAL CHARACTERS: Keep all emojis (📋, 🎉, 🏠, etc.), symbols, punctuation marks, and special characters in their exact positions
-6. ATTRIBUTE PRESERVATION: Never translate or modify class names, IDs, href links, style attributes, or any HTML attributes
-7. PROFESSIONAL TONE: Use formal, respectful language appropriate for official school communications
-8. NUMERICAL DATA: Keep all dates, times, numbers, phone numbers, email addresses, and URLs in their original format
-9. NO EXTRA CONTENT: Do not add explanations, markdown code blocks, comments, or any additional text
-10. DIRECT OUTPUT ONLY: Return ONLY the translated content with preserved formatting - no prefixes, suffixes, or commentary
+TRANSLATION REQUIREMENTS:
+1. PRESERVE EXACT TEXT FORMATTING: Keep ALL line breaks (\\n), paragraph breaks (\\n\\n), spaces, indentation, bullet points, numbered lists, and structural elements EXACTLY as they appear in the original Korean text
+2. MAINTAIN HTML STRUCTURE: If HTML tags are present, preserve every tag, attribute, class name, style, and nesting structure while translating only the text content inside tags
+3. NO MARKDOWN: Never use markdown syntax like **bold**, ### headers, or code blocks. Output plain text or HTML only
+4. PRESERVE SPECIAL CHARACTERS: Keep all Korean punctuation, parentheses, colons, emojis (📋, 🎉, 🏠), dates, numbers, and symbols in their exact positions
+5. PROFESSIONAL TONE: Use formal, respectful language appropriate for official school communications to parents
+6. DIRECT OUTPUT: Return ONLY the translated text/HTML with identical formatting - no additional explanations or prefixes
 
-✅ CORRECT TRANSLATION EXAMPLES:
-Original: <h3 class="notice-section-title">📋 행사 상세 정보</h3>
-Correct: <h3 class="notice-section-title">📋 Event Details</h3>
+FORMATTING PRESERVATION EXAMPLES:
+✅ Korean: "제목: 학교 행사 안내\\n\\n1. 날짜: 2025년 3월\\n2. 장소: 체육관"
+✅ English: "Title: School Event Notice\\n\\n1. Date: March 2025\\n2. Location: Gymnasium"
 
-Original: <div class="info-row"><span class="info-label">날짜:</span><span class="info-value">2025년 3월 15일 (금)</span></div>
-Correct: <div class="info-row"><span class="info-label">Date:</span><span class="info-value">March 15, 2025 (Friday)</span></div>
+✅ Korean: "<p>안녕하세요.<br>학부모님께 알려드립니다.</p>"
+✅ English: "<p>Hello.<br>We inform the parents.</p>"
 
-Original: <p class="greeting-paragraph">안녕하십니까? 학부모님께 감사의 인사를 드립니다.</p>
-Correct: <p class="greeting-paragraph">Hello. We extend our gratitude to the parents.</p>
+❌ WRONG - Adding markdown: "**Title: School Event**" 
+❌ WRONG - Changing breaks: "Title: School Event 1. Date: March 2025 2. Location: Gymnasium"
+❌ WRONG - Adding prefixes: "Here is the translation: Title: School Event"
 
-❌ NEVER DO THIS:
-- Change HTML structure: <div> → <p>
-- Modify class names: "notice-title" → "title"
-- Add markdown: \`\`\`html ... \`\`\`
-- Remove formatting elements
-- Change spacing or indentation
-- Add explanatory text
-
-If you cannot translate to ${targetLanguageName}, return the original Korean text with ALL formatting preserved.
-
-Original content to translate:
+Original Korean text to translate to ${targetLanguageName}:
 ${text}
 
-Translated ${targetLanguageName} content (preserve ALL formatting):`;
+Translated ${targetLanguageName} text (preserve exact formatting):`;
 
     const requestBody = {
       contents: [{
@@ -516,11 +503,25 @@ Translated ${targetLanguageName} content (preserve ALL formatting):`;
 
     let translatedText = candidate.content.parts.map(p => p.text || '').join('').trim();
     
+    // Remove markdown formatting (bold, italic, headers) that might be added by AI
+    translatedText = translatedText.replace(/\*\*(.*?)\*\*/g, '$1'); // Remove **bold**
+    translatedText = translatedText.replace(/\*(.*?)\*/g, '$1'); // Remove *italic*
+    translatedText = translatedText.replace(/^#{1,6}\s+/gm, ''); // Remove ### headers
+    translatedText = translatedText.replace(/`([^`]+)`/g, '$1'); // Remove `code`
+    
     // Strip possible fenced code blocks like ```html ... ``` or ```
     translatedText = translatedText.replace(/^```(?:html?)?\s*/i, '').replace(/```$/,'').trim();
     
-    // Remove any additional wrapping or explanations
-    translatedText = translatedText.replace(/^.*?:/,'').trim(); // Remove "Translated [language] content:" prefix if present
+    // Remove any prefixes like "Translated English text:" or "English translation:"
+    translatedText = translatedText.replace(/^(?:Translated\s+\w+\s+(?:text|content|translation)\s*:\s*|[\w\s]+\s+translation\s*:\s*)/i, '').trim();
+    
+    // Remove any quotation marks that might wrap the entire translation
+    if (translatedText.startsWith('"') && translatedText.endsWith('"')) {
+      translatedText = translatedText.slice(1, -1);
+    }
+    if (translatedText.startsWith("'") && translatedText.endsWith("'")) {
+      translatedText = translatedText.slice(1, -1);
+    }
     
     if (!translatedText) {
       console.warn(`Empty translation result for language: ${targetLanguage}, returning original text`);

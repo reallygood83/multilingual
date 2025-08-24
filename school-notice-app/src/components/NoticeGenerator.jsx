@@ -459,7 +459,7 @@ const NoticeGenerator = () => {
     
     try {
       // generatedData는 이미 생성된 통신문 데이터이므로 바로 사용
-      const generatedHtml = generatedData?.content || '';
+      const generatedHtml = typeof generatedData === 'string' ? generatedData : generatedData?.content || '';
       if (!generatedHtml) {
         throw new Error('생성된 통신문 내용이 없습니다.');
       }

@@ -193,7 +193,12 @@ export const CopyButton = ({
   errorMessage = '복사 실패',
   onSuccess,
   onError,
-  className 
+  className,
+  // 새로운 옵션: 리치 클립보드 지원
+  html,            // string: HTML로 복사할 내용
+  targetRef,       // React ref: 해당 요소의 outerHTML을 복사
+  getHTML,         // () => string : 호출 시점에 HTML 생성
+  getPlainText,    // () => string : 호출 시점에 텍스트 생성(plain)
 }) => {
   const [copied, setCopied] = useState(false);
   const [error, setError] = useState(false);
@@ -203,20 +208,45 @@ export const CopyButton = ({
 
   const handleCopy = async () => {
     try {
-      // Clipboard API 지원 확인
-      if (navigator.clipboard && window.isSecureContext) {
-        await navigator.clipboard.writeText(text);
+      // 동적으로 콘텐츠 구성
+      const resolvedPlain = typeof getPlainText === 'function' ? getPlainText() : (typeof text === 'string' ? text : String(text ?? ''));
+      let resolvedHTML = typeof getHTML === 'function' ? getHTML() : html;
+      if (!resolvedHTML && targetRef?.current) {
+        // 요소의 외부 HTML을 복사 (버튼 등 제어 요소 제외를 원하면 호출부에서 별도 템플릿을 전달하세요)
+        resolvedHTML = targetRef.current.outerHTML;
+      }
+
+      // 리치 클립보드 지원: HTML과 Plain Text 동시 복사
+      if (resolvedHTML && navigator.clipboard && window.ClipboardItem) {
+        const data = {
+          'text/plain': new Blob([resolvedPlain || resolvedHTML.replace(/<[^>]*>/g, '')], { type: 'text/plain' }),
+          'text/html': new Blob([resolvedHTML], { type: 'text/html' })
+        };
+        await navigator.clipboard.write([new ClipboardItem(data)]);
+      } else if (navigator.clipboard && window.isSecureContext) {
+        // 일반 텍스트만 복사
+        await navigator.clipboard.writeText(resolvedPlain || '');
       } else {
-        // 폴백: 전통적인 방식
-        const textArea = document.createElement('textarea');
-        textArea.value = text;
-        textArea.style.position = 'fixed';
-        textArea.style.left = '-999999px';
-        textArea.style.top = '-999999px';
-        document.body.appendChild(textArea);
-        textArea.select();
+        // 폴백: execCommand 방식 (HTML도 지원 가능)
+        const temp = document.createElement('div');
+        temp.style.position = 'fixed';
+        temp.style.left = '-999999px';
+        temp.style.top = '-999999px';
+        if (resolvedHTML) {
+          temp.setAttribute('contenteditable', 'true');
+          temp.innerHTML = resolvedHTML;
+        } else {
+          temp.textContent = resolvedPlain || '';
+        }
+        document.body.appendChild(temp);
+        const selection = window.getSelection();
+        const range = document.createRange();
+        range.selectNodeContents(temp);
+        selection.removeAllRanges();
+        selection.addRange(range);
         document.execCommand('copy');
-        textArea.remove();
+        selection.removeAllRanges();
+        document.body.removeChild(temp);
       }
 
       // 성공 상태 업데이트
@@ -225,10 +255,7 @@ export const CopyButton = ({
       setShowFeedback(true);
       onSuccess?.();
 
-      // 상태 초기화
-      if (timeoutRef.current) {
-        clearTimeout(timeoutRef.current);
-      }
+      if (timeoutRef.current) clearTimeout(timeoutRef.current);
       timeoutRef.current = setTimeout(() => {
         setCopied(false);
         setShowFeedback(false);
@@ -241,10 +268,7 @@ export const CopyButton = ({
       setShowFeedback(true);
       onError?.(err);
 
-      // 오류 상태 초기화
-      if (timeoutRef.current) {
-        clearTimeout(timeoutRef.current);
-      }
+      if (timeoutRef.current) clearTimeout(timeoutRef.current);
       timeoutRef.current = setTimeout(() => {
         setError(false);
         setShowFeedback(false);
@@ -328,14 +352,16 @@ export const CopyableSection = ({
   };
 
   const textContent = getTextContent(content || children);
+  const htmlContent = typeof (content || children) === 'string' ? (content || children) : undefined;
 
   return (
     <FullCopySection className={className}>
       <SectionHeader>
         <SectionTitle>{title}</SectionTitle>
-        {showCopyButton && textContent && (
+        {showCopyButton && (textContent || htmlContent) && (
           <CopyButton
             text={textContent}
+            html={htmlContent}
             successMessage="섹션 내용이 복사되었습니다!"
             size="sm"
             {...copyButtonProps}

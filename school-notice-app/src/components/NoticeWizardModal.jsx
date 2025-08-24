@@ -3,6 +3,11 @@ import styled from 'styled-components';
 import PropTypes from 'prop-types';
 import { generateProfessionalNotice, getProfessionalCategories } from '../services/professionalNoticeService';
 import { useToast } from './modern/ToastSystem';
+import DatePicker from './modern/DatePicker';
+import SmartSelect from './modern/SmartSelect';
+import SchoolInfoForm from './modern/SchoolInfoForm';
+import { FIELD_OPTIONS, DATE_FIELDS, MULTI_SELECT_FIELDS } from '../data/fieldOptions';
+import { DEFAULT_SCHOOL_CONFIG, detectSchoolInfo } from '../data/schoolConfig';
 
 const ModalOverlay = styled.div`
   position: fixed;
@@ -215,60 +220,76 @@ const LoadingSpinner = styled.div`
   }
 `;
 
-// Professional notice categories from professionalNoticeService
+// 연구 기반 고도화된 전문 통신문 카테고리
+// 『AI 기반 학교-가정 소통 프레임워크』 연구의 4가지 목적별 분류 적용
 const PROFESSIONAL_CATEGORIES = [
   {
     id: 'individual_feedback',
-    title: '📚 개별 학생 성적통지표',
-    description: '개별 학생의 성장과 발달을 담은 맞춤형 통신문',
+    title: '📊 평가자 통신문 - 개별 학생 피드백',
+    description: '학생의 학업 성취도와 전인적 성장을 평가하여 전달하는 통신문 (연구 문서: 평가자 역할)',
     icon: '📊',
+    research_category: 'assessor', // 연구 문서의 평가자(The Assessor) 역할
     fields: ['studentName', 'grade', 'classNumber', 'evaluationPeriod', 'learningAttitude', 'personalityTraits', 'academicAchievement', 'peerRelationship', 'specialActivities', 'improvementAreas']
   },
   {
     id: 'semester_summary',
-    title: '🎓 학기말 종합 통신문',
-    description: '한 학기를 마무리하는 종합적인 학급 통신문',
+    title: '📊 평가자 통신문 - 학기말 종합 평가',
+    description: '한 학기 학급 전체의 성장과 성취를 종합적으로 평가하여 전달 (연구 문서: 평가자 역할)',
     icon: '📋',
+    research_category: 'assessor',
     fields: ['grade', 'classNumber', 'semester', 'majorActivities', 'classCharacteristics', 'achievements', 'gratitudeTargets']
   },
   {
     id: 'event_announcement',
-    title: '🎪 학교 행사 안내문',
-    description: '학교 행사에 대한 전문적이고 상세한 안내',
+    title: '📢 공지자 통신문 - 학교 행사 안내',
+    description: '학교의 주요 행사와 일정 정보를 명확하게 전달 (연구 문서: 공지자 역할)',
     icon: '📅',
+    research_category: 'announcer',
     fields: ['eventName', 'eventDate', 'eventLocation', 'targetParticipants', 'eventPurpose', 'requiredItems', 'eventSchedule', 'precautions', 'participationMethod']
   },
   {
+    id: 'parent_participation',
+    title: '🙋 조정자 통신문 - 학부모 참여 요청',
+    description: '학부모의 특정 참여나 협조를 요청하는 통신문 (연구 문서: 조정자 역할)',
+    icon: '🤝',
+    research_category: 'coordinator',
+    fields: ['participationTopic', 'participationPurpose', 'participationMethod', 'participationPeriod', 'requiredItems', 'contactInfo', 'expectedOutcomes']
+  },
+  {
     id: 'home_education_guide',
-    title: '🏠 가정 연계 교육 안내문',
-    description: '가정에서의 교육 협력을 위한 전문적 가이드',
+    title: '🛡️ 보호자 통신문 - 가정 연계 교육',
+    description: '학생의 전인적 안녕을 위한 가정 교육 협력 안내 (연구 문서: 보호자 역할)',
     icon: '👨‍👩‍👧‍👦',
+    research_category: 'guardian',
     fields: ['educationTopic', 'educationGoals', 'targetAge', 'duration', 'homeActivities', 'precautions', 'expectedOutcomes']
   },
   {
-    id: 'life_guidance',
-    title: '🌱 생활지도 협력 안내문',
-    description: '학생 생활지도를 위한 가정-학교 협력 안내',
-    icon: '🤝',
-    fields: ['guidanceTopic', 'currentSituation', 'guidanceGoals', 'specificMethods', 'homeCooperation', 'expectedResults']
+    id: 'safety_education',
+    title: '🛡️ 보호자 통신문 - 안전 교육',
+    description: '학생의 안전과 건강을 위한 체계적인 안전 교육 안내 (연구 문서: 보호자 역할)',
+    icon: '🚸',
+    research_category: 'guardian',
+    fields: ['safetyTopic', 'educationBackground', 'educationContent', 'practicalMethods', 'riskFactors', 'preventionRules', 'emergencyResponse']
   },
   {
-    id: 'safety_education',
-    title: '🛡️ 안전 교육 안내문',
-    description: '학생 안전을 위한 전문적이고 체계적인 안내',
-    icon: '🚸',
-    fields: ['safetyTopic', 'educationBackground', 'educationContent', 'practicalMethods', 'riskFactors', 'preventionRules', 'emergencyResponse']
+    id: 'life_guidance',
+    title: '🛡️ 보호자 통신문 - 생활지도 협력',
+    description: '학생의 건전한 생활습관과 인성 발달을 위한 가정-학교 협력 (연구 문서: 보호자 역할)',
+    icon: '🌱',
+    research_category: 'guardian',
+    fields: ['guidanceTopic', 'currentSituation', 'guidanceGoals', 'specificMethods', 'homeCooperation', 'expectedResults']
   }
 ];
 
-// Field labels for Korean UI
+// 연구 기반 한국어 UI 필드 라벨 (다문화 친화적 명칭 포함)
 const FIELD_LABELS = {
-  studentName: '학생명',
+  // 평가자 통신문 관련 필드
+  studentName: '학생명 (※ 실제 이름 대신 "○○이" 형태로 입력)',
   grade: '학년',
   classNumber: '반',
   evaluationPeriod: '평가 기간',
   learningAttitude: '학습 태도',
-  personalityTraits: '성격 및 특성',
+  personalityTraits: '성격 및 특성 (연구 문서: 칭찬 어휘집 활용)',
   academicAchievement: '학업 성취',
   peerRelationship: '교우 관계',
   specialActivities: '특별 활동',
@@ -278,6 +299,8 @@ const FIELD_LABELS = {
   classCharacteristics: '학급 특성',
   achievements: '성과 및 성장',
   gratitudeTargets: '감사 인사 대상',
+  
+  // 공지자 통신문 관련 필드  
   eventName: '행사명',
   eventDate: '일시',
   eventLocation: '장소',
@@ -287,19 +310,27 @@ const FIELD_LABELS = {
   eventSchedule: '일정표',
   precautions: '주의사항',
   participationMethod: '참여 방법',
-  educationTopic: '주제명',
+  
+  // 조정자 통신문 관련 필드 (새로 추가)
+  participationTopic: '참여 요청 주제',
+  participationPurpose: '참여 목적',
+  participationPeriod: '참여 기간',
+  contactInfo: '문의처',
+  
+  // 보호자 통신문 관련 필드
+  educationTopic: '교육 주제',
   educationGoals: '교육 목표',
   targetAge: '대상 연령',
-  duration: '기간',
-  homeActivities: '가정에서 할 수 있는 활동',
+  duration: '교육 기간',
+  homeActivities: '가정 연계 활동 (연구 문서: 실현 가능한 구체적 방법)',
   expectedOutcomes: '기대 효과',
-  guidanceTopic: '지도 주제',
+  guidanceTopic: '생활지도 주제',
   currentSituation: '현재 상황',
-  guidanceGoals: '목표',
-  specificMethods: '구체적 방법',
+  guidanceGoals: '지도 목표',
+  specificMethods: '구체적 지도 방법',
   homeCooperation: '가정 협력 사항',
   expectedResults: '기대 효과',
-  safetyTopic: '교육 주제',
+  safetyTopic: '안전 교육 주제 (연구 문서: 안전 모듈 활용)',
   educationBackground: '교육 배경',
   educationContent: '교육 내용',
   practicalMethods: '실천 방법',
@@ -358,7 +389,10 @@ const FIELD_PLACEHOLDERS = {
 const NoticeWizardModal = ({ isOpen, onClose, onGenerate, apiKey }) => {
   const [selectedCategory, setSelectedCategory] = useState('');
   const [schoolLevel, setSchoolLevel] = useState('elementary');
-  const [formData, setFormData] = useState({});
+  const [formData, setFormData] = useState({
+    // 학교 정보 기본값 설정
+    ...DEFAULT_SCHOOL_CONFIG
+  });
   const [isGenerating, setIsGenerating] = useState(false);
   const toast = useToast();
   
@@ -370,6 +404,16 @@ const NoticeWizardModal = ({ isOpen, onClose, onGenerate, apiKey }) => {
       ...prev,
       [field]: value
     }));
+    
+    // 학교명이 변경된 경우 관련 정보 자동 감지
+    if (field === 'schoolName' && value) {
+      const detectedInfo = detectSchoolInfo(value);
+      setFormData(prev => ({
+        ...prev,
+        ...detectedInfo,
+        schoolName: value // 사용자 입력 유지
+      }));
+    }
   }, []);
 
   const handleGenerate = useCallback(async () => {
@@ -463,10 +507,71 @@ const NoticeWizardModal = ({ isOpen, onClose, onGenerate, apiKey }) => {
     if (!isGenerating) {
       setSelectedCategory('');
       setSchoolLevel('elementary');
-      setFormData({});
+      setFormData({
+        // 학교 정보 기본값 유지
+        ...DEFAULT_SCHOOL_CONFIG
+      });
       onClose();
     }
   }, [isGenerating, onClose]);
+  
+  // 스마트 입력 렌더 함수
+  const renderSmartInput = useCallback((field, isRequired, isTextArea) => {
+    const fieldOptions = FIELD_OPTIONS[field];
+    const isDateField = DATE_FIELDS.includes(field);
+    const isMultiSelect = MULTI_SELECT_FIELDS.includes(field);
+    
+    // 날짜 선택 필드
+    if (isDateField) {
+      return (
+        <DatePicker
+          value={formData[field] ? new Date(formData[field]) : null}
+          onChange={(date) => handleInputChange(field, date)}
+          placeholder={FIELD_PLACEHOLDERS[field] || `${FIELD_LABELS[field]}을(를) 선택하세요`}
+          disabled={isGenerating}
+        />
+      );
+    }
+    
+    // 선택지가 있는 필드
+    if (fieldOptions && fieldOptions.length > 0) {
+      return (
+        <SmartSelect
+          value={formData[field] || (isMultiSelect ? [] : '')}
+          onChange={(value) => handleInputChange(field, value)}
+          options={fieldOptions}
+          placeholder={`${FIELD_LABELS[field]}을(를) 선택하세요`}
+          disabled={isGenerating}
+          allowCustomInput={true}
+          multiSelect={isMultiSelect}
+          customInputPlaceholder={FIELD_PLACEHOLDERS[field] || `직접 입력하세요`}
+        />
+      );
+    }
+    
+    // 일반 텍스트 입력
+    if (isTextArea) {
+      return (
+        <TextArea
+          value={formData[field] || ''}
+          onChange={e => handleInputChange(field, e.target.value)}
+          placeholder={FIELD_PLACEHOLDERS[field] || `${FIELD_LABELS[field]}을(를) 입력하세요`}
+          disabled={isGenerating}
+          rows={3}
+        />
+      );
+    } else {
+      return (
+        <Input
+          type="text"
+          value={formData[field] || ''}
+          onChange={e => handleInputChange(field, e.target.value)}
+          placeholder={FIELD_PLACEHOLDERS[field] || `${FIELD_LABELS[field]}을(를) 입력하세요`}
+          disabled={isGenerating}
+        />
+      );
+    }
+  }, [formData, isGenerating, handleInputChange]);
 
   if (!isOpen) return null;
 
@@ -557,31 +662,50 @@ const NoticeWizardModal = ({ isOpen, onClose, onGenerate, apiKey }) => {
               💡 {currentCategory.description} - 필수 항목(*)을 포함하여 상세히 입력하시면 더 전문적인 통신문이 생성됩니다.
             </p>
             
+            {/* 학교 정보 자동완성 섹션 */}
+            <SchoolInfoForm
+              formData={formData}
+              onChange={handleInputChange}
+              disabled={isGenerating}
+            />
+            
             {currentCategory.fields.map((field, index) => {
               const isRequired = index < 3; // First 3 fields are required
               const isTextArea = ['learningAttitude', 'personalityTraits', 'academicAchievement', 'peerRelationship', 'specialActivities', 'improvementAreas', 'majorActivities', 'classCharacteristics', 'achievements', 'gratitudeTargets', 'eventPurpose', 'eventSchedule', 'precautions', 'homeActivities', 'expectedOutcomes', 'currentSituation', 'specificMethods', 'homeCooperation', 'expectedResults', 'educationContent', 'practicalMethods', 'riskFactors', 'preventionRules', 'emergencyResponse'].includes(field);
               
+              // 스마트 입력 힌트 표시
+              const fieldOptions = FIELD_OPTIONS[field];
+              const isDateField = DATE_FIELDS.includes(field);
+              const isMultiSelect = MULTI_SELECT_FIELDS.includes(field);
+              
+              let inputHint = '';
+              if (isDateField) {
+                inputHint = ' 📅';
+              } else if (fieldOptions) {
+                inputHint = isMultiSelect ? ' 🏷️ (다중선택)' : ' 📋 (선택지)';
+              }
+              
               return (
                 <FormGroup key={field}>
                   <Label>
-                    {FIELD_LABELS[field] || field} {isRequired && '*'}
+                    {FIELD_LABELS[field] || field} {isRequired && '*'}{inputHint}
                   </Label>
-                  {isTextArea ? (
-                    <TextArea
-                      value={formData[field] || ''}
-                      onChange={e => handleInputChange(field, e.target.value)}
-                      placeholder={FIELD_PLACEHOLDERS[field] || `${FIELD_LABELS[field]}을(를) 입력하세요`}
-                      disabled={isGenerating}
-                      rows={3}
-                    />
-                  ) : (
-                    <Input
-                      type="text"
-                      value={formData[field] || ''}
-                      onChange={e => handleInputChange(field, e.target.value)}
-                      placeholder={FIELD_PLACEHOLDERS[field] || `${FIELD_LABELS[field]}을(를) 입력하세요`}
-                      disabled={isGenerating}
-                    />
+                  {renderSmartInput(field, isRequired, isTextArea)}
+                  {/* 도움말 표시 */}
+                  {(isDateField || fieldOptions) && (
+                    <div style={{
+                      fontSize: '12px',
+                      color: '#666',
+                      marginTop: '4px',
+                      fontStyle: 'italic'
+                    }}>
+                      {isDateField && '📅 달력에서 날짜를 선택하세요'}
+                      {fieldOptions && !isDateField && (
+                        isMultiSelect 
+                          ? '🏷️ 여러 항목을 선택할 수 있습니다 (직접 입력도 가능)'
+                          : '📋 목록에서 선택하거나 직접 입력하세요'
+                      )}
+                    </div>
                   )}
                 </FormGroup>
               );

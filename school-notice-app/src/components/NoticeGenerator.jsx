@@ -305,11 +305,40 @@ const NoticeGenerator = () => {
 
   const handleSettingsChange = useCallback((newSettings) => setSettings(newSettings), []);
 
+  // Enhanced school info integration
   useEffect(() => {
-    if (settings.schoolName || settings.schoolAddress || settings.schoolPhone) {
-      setNoticeData(prevData => ({ ...prevData, school: settings.schoolName || prevData.school, year: settings.schoolYear || prevData.year, publisher: settings.publisher || prevData.publisher, manager: settings.manager || prevData.manager, phone: settings.schoolPhone || prevData.phone, address: settings.schoolAddress || prevData.address }));
+    console.log('🏫 학교 정보 동기화:', settings);
+    
+    const updatedNoticeData = {
+      ...noticeData,
+      // 기본 학교 정보
+      school: settings.schoolName || noticeData.school || 'OO초등학교',
+      year: settings.schoolYear || noticeData.year || '2025학년도',
+      publisher: settings.publisher || noticeData.publisher || '교장',
+      manager: settings.manager || noticeData.manager || '교사',
+      phone: settings.schoolPhone || noticeData.phone || '',
+      address: settings.schoolAddress || noticeData.address || '',
+      
+      // 추가 정보 통합
+      managerEmail: settings.managerEmail || noticeData.managerEmail || '',
+      
+      // 제목이 비어있을 경우 기본 제목 설정
+      title: noticeData.title || `${settings.schoolName || 'OO초등학교'} 가정통신문`,
+      
+      // 인사말이 비어있을 경우 기본 인사말 설정
+      introText: noticeData.introText || '안녕하세요. 학부모님께 안내 말씀을 드립니다.'
+    };
+    
+    // 실제로 변경된 사항이 있을 때만 업데이트
+    const hasChanges = Object.keys(updatedNoticeData).some(key => 
+      updatedNoticeData[key] !== noticeData[key]
+    );
+    
+    if (hasChanges) {
+      console.log('📝 통신문 데이터 업데이트:', updatedNoticeData);
+      setNoticeData(updatedNoticeData);
     }
-  }, [settings.schoolName, settings.schoolYear, settings.schoolAddress, settings.schoolPhone, settings.publisher, settings.manager]);
+  }, [settings.schoolName, settings.schoolYear, settings.schoolAddress, settings.schoolPhone, settings.publisher, settings.manager, settings.managerEmail]);
 
   // Effect for Key Info Extraction
   useEffect(() => {
@@ -464,22 +493,33 @@ const NoticeGenerator = () => {
         throw new Error('생성된 통신문 내용이 없습니다.');
       }
       
-      // 생성된 통신문의 introText를 제목으로 사용
-      const introText = generatedData?.introText || '전문 통신문';
-      
-      setNoticeData({ 
-        ...noticeData, 
+      // 생성된 통신문에 현재 설정된 학교 정보를 통합
+      const updatedNoticeData = { 
+        ...noticeData,
+        // 생성된 내용
         content: generatedHtml,
-        introText: introText
-      });
+        introText: generatedData?.introText || '전문 통신문',
+        
+        // 설정에서 가져온 학교 정보 강제 적용
+        school: settings.schoolName || noticeData.school,
+        year: settings.schoolYear || noticeData.year,
+        publisher: settings.publisher || noticeData.publisher,
+        manager: settings.manager || noticeData.manager,
+        phone: settings.schoolPhone || noticeData.phone,
+        address: settings.schoolAddress || noticeData.address,
+        managerEmail: settings.managerEmail || noticeData.managerEmail
+      };
+      
+      console.log('🏫 학교 정보가 적용된 최종 통신문:', updatedNoticeData);
+      setNoticeData(updatedNoticeData);
       setShowWizardModal(false);
       setEditing(true);
-      showMessage('AI 전문 통신문이 성공적으로 생성되었습니다!', 'success');
+      showMessage('AI 전문 통신문이 성공적으로 생성되었습니다! 학교 정보가 자동으로 적용되었습니다.', 'success');
     } catch (error) {
       console.error('통신문 적용 중 오류:', error);
       showMessage(`통신문 적용 중 오류가 발생했습니다: ${error.message}`, 'error');
     }
-  }, [noticeData, showMessage]);
+  }, [noticeData, settings, showMessage]);
 
   const handleGeneratePDF = useCallback(async (language = null) => {
     setIsGeneratingPDF(true);
@@ -508,35 +548,77 @@ const NoticeGenerator = () => {
         return;
       }
 
-      // HTML에서 텍스트만 추출하고 형식 보존
+      // Enhanced HTML to text conversion with better formatting preservation
       const extractTextWithFormatting = (html) => {
         if (!html) return '';
         
-        // HTML을 텍스트로 변환하되 줄바꿈과 문단 구분 보존
+        console.log('📋 HTML 원본:', html);
+        
+        // HTML을 텍스트로 변환하되 줄바꿈과 문단 구분 완벽 보존
         const tempDiv = document.createElement('div');
         tempDiv.innerHTML = html;
         
-        // <br> 태그를 줄바꿈으로 변환
-        tempDiv.querySelectorAll('br').forEach(br => br.replaceWith('\n'));
-        
-        // <p> 태그를 문단 구분으로 변환
-        tempDiv.querySelectorAll('p').forEach(p => {
-          p.replaceWith(p.textContent + '\n\n');
+        // 1. <br> 및 <br/> 태그를 줄바꿈으로 변환
+        tempDiv.querySelectorAll('br, br/').forEach(br => {
+          br.replaceWith('\n');
         });
         
-        // <div> 태그도 줄바꿈으로 처리
-        tempDiv.querySelectorAll('div').forEach(div => {
-          div.replaceWith(div.textContent + '\n');
+        // 2. 블록 레벨 요소들을 적절한 줄바꿈으로 변환
+        const blockElements = ['p', 'div', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'section', 'article'];
+        blockElements.forEach(tag => {
+          tempDiv.querySelectorAll(tag).forEach(element => {
+            const text = element.textContent?.trim();
+            if (text) {
+              element.replaceWith(text + '\n\n');
+            } else {
+              element.replaceWith('\n');
+            }
+          });
         });
         
-        // 리스트 항목들을 번호나 불릿으로 변환
-        tempDiv.querySelectorAll('li').forEach((li, index) => {
-          const parent = li.closest('ol, ul');
-          const prefix = parent?.tagName === 'OL' ? `${index + 1}. ` : '• ';
-          li.replaceWith(prefix + li.textContent + '\n');
+        // 3. 리스트 항목들을 적절한 포맷으로 변환
+        tempDiv.querySelectorAll('ul, ol').forEach(list => {
+          const listItems = Array.from(list.querySelectorAll('li'));
+          const isOrdered = list.tagName === 'OL';
+          
+          let formattedList = '\n';
+          listItems.forEach((li, index) => {
+            const text = li.textContent?.trim();
+            if (text) {
+              const prefix = isOrdered ? `${index + 1}. ` : '• ';
+              formattedList += prefix + text + '\n';
+            }
+          });
+          formattedList += '\n';
+          
+          list.replaceWith(formattedList);
         });
         
-        return tempDiv.textContent || tempDiv.innerText || '';
+        // 4. 테이블 형식 처리
+        tempDiv.querySelectorAll('table').forEach(table => {
+          let tableText = '\n';
+          table.querySelectorAll('tr').forEach(tr => {
+            const cells = Array.from(tr.querySelectorAll('td, th'));
+            const rowText = cells.map(cell => cell.textContent?.trim()).filter(Boolean).join(' | ');
+            if (rowText) {
+              tableText += rowText + '\n';
+            }
+          });
+          tableText += '\n';
+          table.replaceWith(tableText);
+        });
+        
+        // 5. 최종 텍스트 정리
+        let finalText = tempDiv.textContent || tempDiv.innerText || '';
+        
+        // 연속된 줄바꿈을 정리하되 문단 구분은 보존
+        finalText = finalText
+          .replace(/\n{3,}/g, '\n\n')  // 3개 이상의 연속 줄바꿈을 2개로 축소
+          .replace(/^\n+/, '')        // 시작 부분의 줄바꿈 제거
+          .replace(/\n+$/, '');       // 끝 부분의 줄바꿈 제거
+        
+        console.log('📝 변환된 텍스트:', finalText);
+        return finalText;
       };
 
       // 전체 통신문 텍스트 구성 (형식 보존)
@@ -605,35 +687,77 @@ const NoticeGenerator = () => {
         return;
       }
 
-      // HTML에서 텍스트만 추출하고 형식 보존
+      // Enhanced HTML to text conversion with better formatting preservation
       const extractTextWithFormatting = (html) => {
         if (!html) return '';
         
-        // HTML을 텍스트로 변환하되 줄바꿈과 문단 구분 보존
+        console.log('📋 HTML 원본:', html);
+        
+        // HTML을 텍스트로 변환하되 줄바꿈과 문단 구분 완벽 보존
         const tempDiv = document.createElement('div');
         tempDiv.innerHTML = html;
         
-        // <br> 태그를 줄바꿈으로 변환
-        tempDiv.querySelectorAll('br').forEach(br => br.replaceWith('\n'));
-        
-        // <p> 태그를 문단 구분으로 변환
-        tempDiv.querySelectorAll('p').forEach(p => {
-          p.replaceWith(p.textContent + '\n\n');
+        // 1. <br> 및 <br/> 태그를 줄바꿈으로 변환
+        tempDiv.querySelectorAll('br, br/').forEach(br => {
+          br.replaceWith('\n');
         });
         
-        // <div> 태그도 줄바꿈으로 처리
-        tempDiv.querySelectorAll('div').forEach(div => {
-          div.replaceWith(div.textContent + '\n');
+        // 2. 블록 레벨 요소들을 적절한 줄바꿈으로 변환
+        const blockElements = ['p', 'div', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'section', 'article'];
+        blockElements.forEach(tag => {
+          tempDiv.querySelectorAll(tag).forEach(element => {
+            const text = element.textContent?.trim();
+            if (text) {
+              element.replaceWith(text + '\n\n');
+            } else {
+              element.replaceWith('\n');
+            }
+          });
         });
         
-        // 리스트 항목들을 번호나 불릿으로 변환
-        tempDiv.querySelectorAll('li').forEach((li, index) => {
-          const parent = li.closest('ol, ul');
-          const prefix = parent?.tagName === 'OL' ? `${index + 1}. ` : '• ';
-          li.replaceWith(prefix + li.textContent + '\n');
+        // 3. 리스트 항목들을 적절한 포맷으로 변환
+        tempDiv.querySelectorAll('ul, ol').forEach(list => {
+          const listItems = Array.from(list.querySelectorAll('li'));
+          const isOrdered = list.tagName === 'OL';
+          
+          let formattedList = '\n';
+          listItems.forEach((li, index) => {
+            const text = li.textContent?.trim();
+            if (text) {
+              const prefix = isOrdered ? `${index + 1}. ` : '• ';
+              formattedList += prefix + text + '\n';
+            }
+          });
+          formattedList += '\n';
+          
+          list.replaceWith(formattedList);
         });
         
-        return tempDiv.textContent || tempDiv.innerText || '';
+        // 4. 테이블 형식 처리
+        tempDiv.querySelectorAll('table').forEach(table => {
+          let tableText = '\n';
+          table.querySelectorAll('tr').forEach(tr => {
+            const cells = Array.from(tr.querySelectorAll('td, th'));
+            const rowText = cells.map(cell => cell.textContent?.trim()).filter(Boolean).join(' | ');
+            if (rowText) {
+              tableText += rowText + '\n';
+            }
+          });
+          tableText += '\n';
+          table.replaceWith(tableText);
+        });
+        
+        // 5. 최종 텍스트 정리
+        let finalText = tempDiv.textContent || tempDiv.innerText || '';
+        
+        // 연속된 줄바꿈을 정리하되 문단 구분은 보존
+        finalText = finalText
+          .replace(/\n{3,}/g, '\n\n')  // 3개 이상의 연속 줄바꿈을 2개로 축소
+          .replace(/^\n+/, '')        // 시작 부분의 줄바꿈 제거
+          .replace(/\n+$/, '');       // 끝 부분의 줄바꿈 제거
+        
+        console.log('📝 변환된 텍스트:', finalText);
+        return finalText;
       };
 
       // 전체 한국어 통신문 텍스트 구성 (형식 보존)
@@ -718,11 +842,45 @@ const NoticeGenerator = () => {
         {isTranslating && translationProgress > 0 && <ProgressIndicator $progress={translationProgress} />}
         
         <ButtonGroup>
-          <OptimizedButton variant="primary" onClick={() => setEditing(!editing)}>{editing ? '편집 완료' : '편집 모드'}</OptimizedButton>
-          <OptimizedButton variant="secondary" onClick={() => setShowWizardModal(true)} loading={isGeneratingNotice} loadingText="생성 중..." disabled={!settings.geminiApiKey}>🪄 AI 다문화 통신문 생성 마법사</OptimizedButton>
-          <OptimizedButton variant="secondary" onClick={handleTranslateAll} disabled={isTranslating || !settings.geminiApiKey} loading={isTranslating} loadingText="번역 중..." title={!settings.geminiApiKey ? 'Gemini API 키가 필요합니다' : `모든 언어로 일괄 번역 (${languages.length}개)`}>모든 언어로 번역 ({languages.length}개)</OptimizedButton>
-          <OptimizedButton variant="outline" onClick={() => handleCopyKoreanText()} title="한국어 원문 전체 복사">📋 한국어 복사</OptimizedButton>
-          <OptimizedButton variant="success" onClick={() => handleGeneratePDF()} loading={isGeneratingPDF} loadingText="생성 중...">한국어 PDF</OptimizedButton>
+          <OptimizedButton variant="primary" onClick={() => setEditing(!editing)}>
+            {editing ? '✅ 편집 완료' : '✏️ 편집 모드'}
+          </OptimizedButton>
+          <OptimizedButton 
+            variant="secondary" 
+            onClick={() => setShowWizardModal(true)} 
+            loading={isGeneratingNotice} 
+            loadingText="AI 작성 중..." 
+            disabled={!settings.geminiApiKey}
+            title={!settings.geminiApiKey ? 'Gemini API 키가 필요합니다' : 'AI가 전문적인 통신문을 생성합니다'}
+          >
+            🪄 AI 다문화 통신문 생성
+          </OptimizedButton>
+          <OptimizedButton 
+            variant="secondary" 
+            onClick={handleTranslateAll} 
+            disabled={isTranslating || !settings.geminiApiKey} 
+            loading={isTranslating} 
+            loadingText="번역 중..." 
+            title={!settings.geminiApiKey ? 'Gemini API 키가 필요합니다' : `모든 언어로 일괄 번역 (${languages.length}개)`}
+          >
+            🌍 모든 언어로 번역 ({languages.length}개)
+          </OptimizedButton>
+          <OptimizedButton 
+            variant="outline" 
+            onClick={() => handleCopyKoreanText()} 
+            title="한국어 원문 전체를 클립보드에 복사합니다"
+            style={{ backgroundColor: '#f0f8ff', borderColor: '#0969da', color: '#0969da' }}
+          >
+            📋 한국어 복사
+          </OptimizedButton>
+          <OptimizedButton 
+            variant="success" 
+            onClick={() => handleGeneratePDF()} 
+            loading={isGeneratingPDF} 
+            loadingText="PDF 생성 중..."
+          >
+            📜 한국어 PDF
+          </OptimizedButton>
         </ButtonGroup>
 
         <AIOptions>

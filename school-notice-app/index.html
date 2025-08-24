@@ -2,14 +2,121 @@
 <html lang="ko">
   <head>
     <meta charset="UTF-8" />
+    
+    <!-- 🌍 모바일 최적화 메타 태그 -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <meta name="format-detection" content="telephone=no" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <meta name="apple-mobile-web-app-title" content="다문화통신문" />
+    
+    <!-- 🎨 테마 및 브랜딩 -->
+    <meta name="theme-color" content="#0969da" />
+    <meta name="msapplication-navbutton-color" content="#0969da" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="#0969da" />
+    
+    <!-- 📱 아이콘 및 매니페스트 -->
     <link rel="icon" type="image/x-icon" href="/favicon.ico" />
     <link rel="icon" type="image/svg+xml" href="/vite.svg" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="description" content="가정통신문 다국어 번역 시스템 - School Notice Multilingual Translation System" />
-    <title>🏫 통신문 번역 시스템 | School Notice Translator</title>
+    <link rel="manifest" href="/manifest.json" />
+    <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png" />
+    <link rel="apple-touch-icon" sizes="180x180" href="/icons/apple-touch-icon-180x180.png" />
+    
+    <!-- 📄 SEO 최적화 -->
+    <meta name="description" content="🌍 AI 기반 다국어 가정통신문 생성 및 번역 시스템 - 학교와 가정 간 소통을 위한 전문적인 통신문을 AI가 자동 생성하고 14개 언어로 번역합니다." />
+    <meta name="keywords" content="가정통신문, 다문화, 번역, AI, 학교, 교육, 다국어, 통신문생성, Gemini, 인공지능" />
+    <meta name="author" content="김문정 (안양 박달초등학교)" />
+    <meta name="robots" content="index, follow" />
+    <meta name="language" content="Korean" />
+    
+    <!-- 🔗 Open Graph (소셜 미디어 공유) -->
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="🌍 다문화 학교 통신문 시스템" />
+    <meta property="og:description" content="AI 기반 다국어 가정통신문 생성 및 번역 시스템 - 14개 언어 지원" />
+    <meta property="og:url" content="https://school-notice-app.vercel.app" />
+    <meta property="og:site_name" content="다문화 학교 통신문 시스템" />
+    <meta property="og:locale" content="ko_KR" />
+    
+    <!-- 📱 Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="🌍 다문화 학교 통신문 시스템" />
+    <meta name="twitter:description" content="AI 기반 다국어 가정통신문 생성 및 번역 시스템" />
+    
+    <!-- 📐 iOS Safari 최적화 -->
+    <meta name="apple-mobile-web-app-title" content="다문화통신문" />
+    <meta name="apple-touch-fullscreen" content="yes" />
+    
+    <!-- 🔒 보안 정책 -->
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self' 'unsafe-inline' 'unsafe-eval' https:; connect-src 'self' https: wss:; img-src 'self' data: https:; font-src 'self' https: data:;" />
+    
+    <!-- 📊 성능 최적화 -->
+    <link rel="dns-prefetch" href="//fonts.googleapis.com" />
+    <link rel="dns-prefetch" href="//generativelanguage.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" crossorigin />
+    
+    <title>🌍 다문화 학교 통신문 시스템 | AI 다국어 번역</title>
   </head>
   <body>
+    <!-- 🌍 다문화 학교 통신문 시스템 - 메인 앱 -->
     <div id="root"></div>
+    
+    <!-- 💬 로딩 중 안내 메시지 -->
+    <noscript>
+      <div style="
+        position: fixed; 
+        top: 0; 
+        left: 0; 
+        width: 100%; 
+        height: 100%; 
+        background: #f8f9fa; 
+        display: flex; 
+        align-items: center; 
+        justify-content: center; 
+        text-align: center; 
+        font-family: 'Pretendard', sans-serif; 
+        color: #24292f;
+      ">
+        <div>
+          <h2>🌍 다문화 학교 통신문 시스템</h2>
+          <p>이 앱을 사용하려면 JavaScript를 활성화해야 합니다.</p>
+          <p>JavaScript를 활성화한 후 페이지를 새로고침해주세요.</p>
+        </div>
+      </div>
+    </noscript>
+    
+    <!-- 📱 PWA 설치 스크립트 -->
+    <script>
+      // Service Worker 등록 (PWA 지원)
+      if ('serviceWorker' in navigator) {
+        window.addEventListener('load', function() {
+          navigator.serviceWorker.register('/sw.js')
+            .then(function(registration) {
+              console.log('🎯 Service Worker 등록 성공:', registration.scope);
+            })
+            .catch(function(error) {
+              console.log('❌ Service Worker 등록 실패:', error);
+            });
+        });
+      }
+      
+      // PWA 설치 프롬프트
+      let deferredPrompt;
+      window.addEventListener('beforeinstallprompt', function(e) {
+        console.log('📱 PWA 설치 프롬프트 준비됨');
+        e.preventDefault();
+        deferredPrompt = e;
+      });
+      
+      // 설치 완료 추적
+      window.addEventListener('appinstalled', function() {
+        console.log('✅ PWA 설치 완료');
+        deferredPrompt = null;
+      });
+    </script>
+    
+    <!-- 🚀 메인 React 앱 시작 -->
     <script type="module" src="/src/main.jsx"></script>
   </body>
 </html>

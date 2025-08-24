@@ -12,6 +12,12 @@ const PlatformContainer = styled.div`
   height: 100vh;
   background-color: var(--surface-secondary);
   font-family: var(--font-main);
+  
+  @media (max-width: 768px) {
+    flex-direction: column;
+    height: auto;
+    min-height: 100vh;
+  }
 `;
 
 const Sidebar = styled.nav`
@@ -22,6 +28,20 @@ const Sidebar = styled.nav`
   display: flex;
   flex-direction: column;
   flex-shrink: 0;
+  
+  @media (max-width: 768px) {
+    width: 100%;
+    padding: 16px;
+    border-right: none;
+    border-bottom: 1px solid var(--neutral-200);
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+  
+  @media (max-width: 480px) {
+    padding: 12px;
+  }
 `;
 
 const Logo = styled.h1`
@@ -29,8 +49,22 @@ const Logo = styled.h1`
   font-weight: 700;
   color: var(--text-primary);
   margin: 0 0 32px 0;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  
   span {
     color: var(--primary-500);
+  }
+  
+  @media (max-width: 768px) {
+    font-size: 20px;
+    margin: 0 0 20px 0;
+  }
+  
+  @media (max-width: 480px) {
+    font-size: 18px;
+    margin: 0 0 16px 0;
   }
 `;
 
@@ -38,6 +72,11 @@ const NavMenu = styled.ul`
   list-style: none;
   padding: 0;
   margin: 0;
+  
+  @media (max-width: 768px) {
+    display: ${props => props.$collapsed ? 'none' : 'block'};
+    margin-top: ${props => props.$collapsed ? '0' : '16px'};
+  }
 `;
 
 const NavItem = styled.li`
@@ -68,6 +107,15 @@ const ContentArea = styled.main`
   flex: 1;
   overflow-y: auto;
   padding: 32px;
+  
+  @media (max-width: 768px) {
+    padding: 16px;
+    overflow-y: visible;
+  }
+  
+  @media (max-width: 480px) {
+    padding: 12px;
+  }
 `;
 
 const SidebarFooter = styled.footer`
@@ -87,8 +135,33 @@ const SidebarFooter = styled.footer`
   }
 `;
 
+// Mobile Navigation Toggle Button
+const MobileNavToggle = styled.button`
+  display: none;
+  background: none;
+  border: none;
+  font-size: 20px;
+  cursor: pointer;
+  padding: 8px;
+  border-radius: 4px;
+  color: var(--text-primary);
+  min-height: 44px;
+  min-width: 44px;
+  
+  @media (max-width: 768px) {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  
+  &:hover {
+    background-color: var(--neutral-100, #f3f4f6);
+  }
+`;
+
 const OptimizedApp = () => {
   const [activeView, setActiveView] = useState('notice_generator');
+  const [mobileNavCollapsed, setMobileNavCollapsed] = useState(true);
   
   const [settings] = useState(() => {
     const saved = localStorage.getItem('schoolNoticeSettings');
@@ -134,8 +207,16 @@ const OptimizedApp = () => {
   return (
     <PlatformContainer>
       <Sidebar>
-        <Logo>다문화교실<span>플랫폼</span></Logo>
-        <NavMenu>
+        <Logo>
+          <span>다문화교실<span>플랫폼</span></span>
+          <MobileNavToggle 
+            onClick={() => setMobileNavCollapsed(!mobileNavCollapsed)}
+            aria-label="메뉴 토글"
+          >
+            {mobileNavCollapsed ? '☰' : '✕'}
+          </MobileNavToggle>
+        </Logo>
+        <NavMenu $collapsed={mobileNavCollapsed}>
           <NavItem>
             <NavLink 
               href="#"

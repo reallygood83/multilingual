@@ -290,7 +290,7 @@ const OptimizedApp = ({ selectedProgram, onBackToMain }) => {
           </NavItem>
         </NavMenu>
         <SidebarFooter>
-          © 2025 김문정(안양박달초) | <a href="https://www.youtube.com/@%EB%B0%B0%EC%9C%80%EC%9D%98%EB%8B%AC%EC%9D%B8-p5v" target="_blank" rel="noopener noreferrer">유튜브 배윰의 달인</a>
+          © 2025 김문정(안양박달초) | <a href="https://www.youtube.com/@%EB%B0%B0%EC%9B%80%EC%9D%98%EB%8B%AC%EC%9D%B8-p5v" target="_blank" rel="noopener noreferrer">유튜브 배움의 달인</a>
         </SidebarFooter>
       </Sidebar>
       <ContentArea>

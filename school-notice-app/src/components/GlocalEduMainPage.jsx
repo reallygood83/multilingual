@@ -390,7 +390,7 @@ const GlocalEduMainPage = ({ onProgramSelect }) => {
         <Footer>
           <p>© 2025 김문정(안양 박달초) | 
             <a 
-              href="https://www.youtube.com/@%EB%B0%B0%EC%9C%80%EC%9D%98%EB%8B%AC%EC%9D%B8-p5v" 
+              href="https://www.youtube.com/@%EB%B0%B0%EC%9B%80%EC%9D%98%EB%8B%AC%EC%9D%B8-p5v" 
               target="_blank" 
               rel="noopener noreferrer"
             >

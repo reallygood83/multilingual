@@ -475,7 +475,7 @@ const NoticeWizardModal = ({ isOpen, onClose, onGenerate, apiKey }) => {
         toast.showSuccess('전문적인 통신문이 성공적으로 생성되었습니다!');
         
         // Call the onGenerate prop with the professional result
-        await onGenerate(result.data);
+        await onGenerate(result.content);
         onClose();
       } else {
         throw new Error(result.error || '통신문 생성에 실패했습니다.');

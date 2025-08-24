@@ -1,4 +1,4 @@
-import React, { useState, Suspense, lazy } from 'react';
+import React, { useState, useEffect, Suspense, lazy } from 'react';
 import styled from 'styled-components';
 import LoadingSpinner from './LoadingSpinner';
 
@@ -159,8 +159,8 @@ const MobileNavToggle = styled.button`
   }
 `;
 
-const OptimizedApp = () => {
-  const [activeView, setActiveView] = useState('notice_generator');
+const OptimizedApp = ({ selectedProgram, onBackToMain }) => {
+  const [activeView, setActiveView] = useState(selectedProgram || 'notice_generator');
   const [mobileNavCollapsed, setMobileNavCollapsed] = useState(true);
   const [generatedNotice, setGeneratedNotice] = useState(null);
   
@@ -168,6 +168,13 @@ const OptimizedApp = () => {
     const saved = localStorage.getItem('schoolNoticeSettings');
     return saved ? JSON.parse(saved) : { geminiApiKey: '' };
   });
+
+  // Update activeView when selectedProgram changes
+  useEffect(() => {
+    if (selectedProgram) {
+      setActiveView(selectedProgram);
+    }
+  }, [selectedProgram]);
 
   const handleNoticeGenerated = (noticeContent) => {
     setGeneratedNotice(noticeContent);
@@ -219,7 +226,30 @@ const OptimizedApp = () => {
     <PlatformContainer>
       <Sidebar>
         <Logo>
-          <span>다문화교실<span>플랫폼</span></span>
+          <div>
+            <button 
+              onClick={onBackToMain}
+              style={{
+                background: 'none',
+                border: 'none',
+                color: 'inherit',
+                cursor: 'pointer',
+                fontSize: 'inherit',
+                fontWeight: 'inherit',
+                padding: '0',
+                margin: '0 0 8px 0',
+                display: 'block',
+                textAlign: 'left',
+                width: '100%'
+              }}
+              title="메인 페이지로 돌아가기"
+            >
+              ← <span>Glocal Edu</span>
+            </button>
+            <small style={{ color: 'var(--text-muted)', fontSize: '0.8em' }}>
+              다문화 교육 플랫폼
+            </small>
+          </div>
           <MobileNavToggle 
             onClick={() => setMobileNavCollapsed(!mobileNavCollapsed)}
             aria-label="메뉴 토글"

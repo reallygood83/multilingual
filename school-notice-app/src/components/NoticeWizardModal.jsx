@@ -1,7 +1,7 @@
 import React, { useState, useCallback } from 'react';
 import styled from 'styled-components';
 import PropTypes from 'prop-types';
-import { generateProfessionalNotice, getProfessionalCategories } from '../services/professionalNoticeService';
+import { generateProfessionalNotice, getAvailableCategories } from '../services/professionalNoticeService';
 import { useToast } from './modern/ToastSystem';
 import DatePicker from './modern/DatePicker';
 import SmartSelect from './modern/SmartSelect';

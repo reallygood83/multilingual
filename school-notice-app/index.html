@@ -19,7 +19,7 @@
     <!-- 📱 아이콘 및 매니페스트 -->
     <link rel="icon" type="image/x-icon" href="/favicon.ico" />
     <link rel="icon" type="image/svg+xml" href="/vite.svg" />
-    <link rel="manifest" href="/manifest.json" />
+    <link rel="manifest" href="/manifest.webmanifest" />
     <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png" />
     <link rel="apple-touch-icon" sizes="180x180" href="/icons/apple-touch-icon-180x180.png" />
     
@@ -86,21 +86,8 @@
       </div>
     </noscript>
     
-    <!-- 📱 PWA 설치 스크립트 -->
+    <!-- 📱 PWA 설치 스크립트 (Service Worker 등록은 main.jsx에서 처리) -->
     <script>
-      // Service Worker 등록 (PWA 지원)
-      if ('serviceWorker' in navigator) {
-        window.addEventListener('load', function() {
-          navigator.serviceWorker.register('/sw.js')
-            .then(function(registration) {
-              console.log('🎯 Service Worker 등록 성공:', registration.scope);
-            })
-            .catch(function(error) {
-              console.log('❌ Service Worker 등록 실패:', error);
-            });
-        });
-      }
-      
       // PWA 설치 프롬프트
       let deferredPrompt;
       window.addEventListener('beforeinstallprompt', function(e) {

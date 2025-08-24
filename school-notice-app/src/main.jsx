@@ -30,8 +30,21 @@ if ('serviceWorker' in navigator) {
       setTimeout(() => window.location.reload(), 150)
     }
   } else {
-    // In production: register sw.js with update prompt
-    window.addEventListener('load', () => {
+    // In production: register sw.js with update prompt, but only if sw.js is served with a JS MIME type (avoid HTML fallback errors)
+    window.addEventListener('load', async () => {
+      try {
+        const resp = await fetch('/sw.js', { cache: 'no-store' })
+        const ct = resp.headers.get('content-type') || ''
+        if (!resp.ok || ct.includes('text/html')) {
+          // Skip registration if server returns HTML or non-ok response
+          console.warn('Skipping Service Worker registration: /sw.js not served as JavaScript (content-type=' + ct + ', status=' + resp.status + ')')
+          return
+        }
+      } catch (_) {
+        // Network errors: skip SW registration silently
+        return
+      }
+
       navigator.serviceWorker.register('/sw.js')
         .then(registration => {
           // Listen for updates
